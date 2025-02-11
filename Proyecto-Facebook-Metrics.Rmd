@@ -66,23 +66,35 @@ Según la descripción oficial de los datos, las variables que conforman el conj
 Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
 
 **¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.**
-Sí, pero para hacerlo correctamente es recomendable aplicar métodos estadísticos como matrices de correlación.
+Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
 
 ```{r}
 # Cargar librerías necesarias
-#install.packages("corrplot")  # Instalar si no lo tienes
+library(ggplot2)
 library(corrplot)
 
-# Cargar los datos (ajusta el nombre del archivo)
+# Seleccionar solo las variables numéricas del dataset de Facebook Metrics
+variables_numericas <- sapply(dataset_Facebook, is.numeric)
 
-# Seleccionar solo variables numéricas
-df_numeric <- dataset_Facebook[sapply(df, is.numeric)]
+# Seleccionar solo las columnas numéricas
+datos_numericos <- dataset_Facebook[, variables_numericas]
 
-# Calcular la matriz de correlación
-cor_matrix <- cor(df_numeric, use = "complete.obs")
+# Calcular la matriz de correlación entre las variables numéricas
+correlacion <- cor(datos_numericos)
 
-# Visualizar la matriz de correlación
-corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.8, tl.col = "black")
+# Visualizar la matriz de correlación con ggplot2
+# Convertir la matriz de correlación a un marco de datos para ggplot
+cor_df <- as.data.frame(as.table(correlacion))
+colnames(cor_df) <- c("Var1", "Var2", "value")
+
+# Crear el heatmap usando ggplot2
+ggplot(cor_df, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +  # Usar tiles de color
+  scale_fill_gradient2(low = "white", high = "red", mid = "lightblue", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Matriz de Correlación - Facebook Metrics") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotar etiquetas para mejor visibilidad
+
 
 ```
 
@@ -93,6 +105,37 @@ Sí, se puede hacer con gráficos y pruebas estadísticas como:
 + Boxplots para detectar outliers y asimetrías.
 + Q-Q Plots para comparar con una distribución normal.
 + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
+
+
+
+
+
+## Partición de los datos
+Realizamos la división de nuestros datos en 3 muestras: entrenamiento, validación y test.
+
+```{r particion}
+# mediante una semilla conseguimos que el ejercicio sea reproducible
+set.seed(1)
+
+
+# creamos índices
+indices <- 1:ntotal
+ntrain <- ntotal * .5
+ntest <- ntotal * .25
+nval <- ntotal - (ntrain+ntest)
+indices.train <- sample(indices, ntrain, replace = FALSE)
+indices.test <- sample(indices[-indices.train],ntest,replace=FALSE)
+indices.val <- indices[-c(indices.train,indices.test)]
+
+# Usamos el 50% de la base de datos como conjunto de entrenamiento
+# 25% para test
+# 25% para validación
+train  <- dataset_Facebook[indices.train, ]
+test   <- dataset_Facebook[indices.test, ]
+val   <- dataset_Facebook[indices.val, ]
+
+```
+
 
 
 ## Estudio de las variables
@@ -118,5 +161,7 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 
 
 ### Variables
+
+
 
 
