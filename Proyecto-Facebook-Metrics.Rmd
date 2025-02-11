@@ -52,6 +52,57 @@ Según la descripción oficial de los datos, las variables que conforman el conj
 (aqui iria da descripcion de las varibles y tal)
 
 
+# EDA
+## Preguntas a resolver pre-EDA
 
+
+
+
+
+
+
+
+**Variable objetivo: ¿Existe una variable de “respuesta”? ¿Binaria o multiclase?**
+Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
+
+**¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.**
+Sí, pero para hacerlo correctamente es recomendable aplicar métodos estadísticos como matrices de correlación.
+
+```{r}
+# Cargar librerías necesarias
+#install.packages("corrplot")  # Instalar si no lo tienes
+library(corrplot)
+
+# Cargar los datos (ajusta el nombre del archivo)
+
+# Seleccionar solo variables numéricas
+df_numeric <- dataset_Facebook[sapply(df, is.numeric)]
+
+# Calcular la matriz de correlación
+cor_matrix <- cor(df_numeric, use = "complete.obs")
+
+# Visualizar la matriz de correlación
+corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.8, tl.col = "black")
+
+```
+
+
+**¿Es posible identificar la distribución que siguen las variables?**
+Sí, se puede hacer con gráficos y pruebas estadísticas como:
++ Histogramas para visualizar la forma de la distribución.
++ Boxplots para detectar outliers y asimetrías.
++ Q-Q Plots para comparar con una distribución normal.
++ Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
+
+
+## Estudio delas variables
+La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target
+
+
+
+### Target
+
+
+### Variables
 
 
