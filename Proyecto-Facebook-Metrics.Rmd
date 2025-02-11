@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(statip)
 library(ggplot2)
 library(readr)
+library(corrplot)
 ```
 
 # Introducción
@@ -69,10 +70,6 @@ Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyec
 Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
 
 ```{r}
-# Cargar librerías necesarias
-library(ggplot2)
-library(corrplot)
-
 # Seleccionar solo las variables numéricas del dataset de Facebook Metrics
 variables_numericas <- sapply(dataset_Facebook, is.numeric)
 
