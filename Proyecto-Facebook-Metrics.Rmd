@@ -95,7 +95,7 @@ Sí, se puede hacer con gráficos y pruebas estadísticas como:
 + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
 
-## Estudio delas variables
+## Estudio de las variables
 La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target
 
 ```{r}
