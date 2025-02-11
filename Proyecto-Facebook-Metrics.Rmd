@@ -30,6 +30,7 @@ Este proyecto ha sido realizado por el grupo del grado de Ciencia e Ingeniería 
 Nuestro datasetes el "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
 
 
+
 ```{r lectura, warning=FALSE}
 # lectura de datos en csv
 #datos<-read.csv("dataset_Facebook.csv")
@@ -39,8 +40,18 @@ Nuestro datasetes el "Facebook Metrics Dataset". Es un conjunto de datos que rec
 ntotal <- dim(dataset_Facebook)[1] # numero de observaciones
 ptotal <- dim(dataset_Facebook)[2] # numero de columnas
 
-print(ntotal)
-print(ptotal)
 
 
 ```
+
+Comprobamos que tenemos $n=$```r ntotal``` observaciones y $p=$```r ptotal``` variables en la base de datos.
+
+
+Según la descripción oficial de los datos, las variables que conforman el conjunto de datos son:
+
+(aqui iria da descripcion de las varibles y tal)
+
+
+
+
+
