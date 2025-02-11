@@ -98,6 +98,18 @@ Sí, se puede hacer con gráficos y pruebas estadísticas como:
 ## Estudio delas variables
 La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target
 
+```{r}
+# Relación con el target
+
+ggplot(data = train, aes(x = Nausea_Vomiting, fill = as.factor(Baselinehistological_staging))) +
+  geom_bar()+
+  labs(title = "Relación Nauseas/Vomitos - target")
+
+# prueba de chi cuadrado
+chisq.test(table(train$Nausea_Vomiting,train$Baselinehistological_staging))
+```
+
+
 
 
 ### Target
