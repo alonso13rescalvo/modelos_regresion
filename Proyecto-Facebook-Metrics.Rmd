@@ -22,13 +22,13 @@ library(corrplot)
 # Introducción
 
 **Información de los autores**
-Este proyecto ha sido realizado por el grupo del grado de Ciencia e Ingeniería de datos para la asignatura de Modelos de Regresión que cuanta con los siguientes integrantes:
+Este proyecto ha sido realizado por el grupo 9 del grado de Ciencia e Ingeniería de datos para la asignatura de Modelos de Regresión que cuanta con los siguientes integrantes:
 
 + **Cristina Rodríguez Ayllón**
 + **Lucía Arnaldo Cuevas**
 + **Alonso Rescalvo Casas**
 
-Nuestro datasetes el "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
+Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
 
 
 
@@ -50,14 +50,14 @@ Comprobamos que tenemos $n=$```r ntotal``` observaciones y $p=$```r ptotal``` va
 
 Según la descripción oficial de los datos, las variables que conforman el conjunto de datos son:
 
-(aqui iria da descripcion de las varibles y tal)
+(aqui iria da descripcion de las varibles y tal, la tablita que hizo Alonso)
 
 
 # EDA
 ## Preguntas a resolver pre-EDA
 
 
-
+(preguntas alonso)
 
 
 
@@ -80,7 +80,7 @@ Sí, se puede hacer con gráficos y pruebas estadísticas como:
 + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
 
-
+(preguntas lucía)
 
 
 ## Partición de los datos
