@@ -69,31 +69,7 @@ Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyec
 **¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.**
 Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
 
-```{r}
-# Seleccionar solo las variables numéricas del dataset de Facebook Metrics
-variables_numericas <- sapply(dataset_Facebook, is.numeric)
 
-# Seleccionar solo las columnas numéricas
-datos_numericos <- dataset_Facebook[, variables_numericas]
-
-# Calcular la matriz de correlación entre las variables numéricas
-correlacion <- cor(datos_numericos)
-
-# Visualizar la matriz de correlación con ggplot2
-# Convertir la matriz de correlación a un marco de datos para ggplot
-cor_df <- as.data.frame(as.table(correlacion))
-colnames(cor_df) <- c("Var1", "Var2", "value")
-
-# Crear el heatmap usando ggplot2
-ggplot(cor_df, aes(Var1, Var2, fill = value)) +
-  geom_tile(color = "white") +  # Usar tiles de color
-  scale_fill_gradient2(low = "white", high = "red", mid = "lightblue", midpoint = 0) +
-  theme_minimal() +
-  labs(title = "Matriz de Correlación - Facebook Metrics") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotar etiquetas para mejor visibilidad
-
-
-```
 
 
 **¿Es posible identificar la distribución que siguen las variables?**
@@ -156,8 +132,63 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 
 ### Target
 
+**Total Interactions**
+
 
 ### Variables
+
+**Page total likes**
+
+
+**Type**
+
+
+**Category**
+
+
+**Post Month**
+
+
+**Post Weekday**
+
+
+**Post Hour**
+
+
+**Paid**
+
+
+**Lifetime Post Total Reach**
+
+
+**Lifetime Post Total Impressions**
+
+
+**Lifetime Engaged Users**
+
+
+**Lifetime Post Consumers**
+
+
+**Lifetime Post Consumptions**
+
+
+**Lifetime Post Impressions by people who have liked your Page**
+
+
+**Lifetime Post reach by people who like your Page**
+
+
+**Lifetime People who have liked your Page and engaged with your post**
+
+
+**Comment**
+
+
+**Like**
+
+
+**Share**
 
 
 
