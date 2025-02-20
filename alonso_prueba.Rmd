@@ -188,36 +188,43 @@ summary(train$`Page total likes`
 ```
 
 # Enfrentar varibale con el target
+
+
 ```{r}
 
-plot(log(train$`Page total likes`, train$`Total Interactions`), main="Relación entre Variable y Target",
-     xlab="Variable", ylab="Target", col="blue", pch=16)
-modelo <- lm(train$`Total Interactions` ~ train$`Page total likes`, data=train)
-summary(modelo)
-
-
-```
-
-```{r}
+#LIKE
 cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
 plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
      xlab="Likes", ylab="Total Interactions", col="red", pch=16)
 
+
+#COMMENT
 cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
 plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
      xlab="comment", ylab="Total Interactions", col="blue", pch=16)
 
+
+#SHARE
 cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
 plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
      xlab="share", ylab="Total Interactions", col="yellow", pch=16)
+
+
+#Lifetime People who have liked your Page and engaged with your post
 
 cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
 plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
      xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
 
+
+#Lifetime Post reach by people who like your Page
+
 cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
 plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
-     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="red", pch=16)
+     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
+
+
+#Lifetime Post Impressions by people who have liked your Page
 
 
 cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
@@ -226,5 +233,7 @@ plot(train$`Lifetime Post Impressions by people who have liked your Page`, train
 
 
 ```
+
+
 
 
