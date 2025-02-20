@@ -34,7 +34,10 @@ Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos q
 
 ```{r lectura, warning=FALSE}
 # lectura de datos en csv
-#dataset_Facebook <-read.csv("dataset_Facebook.csv")
+library(readr)
+dataset_Facebook <- read_delim("dataset_Facebook.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(dataset_Facebook)
 # Cambiamos el nombre de las variables 
 
 #datos<-read.csv("datos/datos.csv")
