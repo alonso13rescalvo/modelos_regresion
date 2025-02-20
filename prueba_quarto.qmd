@@ -1,23 +1,9 @@
 ---
-title: "prueba"
-author: "Cristina, Lucia, Alonso"
-date: "2025-02-09"
-output: 
-  html_document:
-      theme: journal
-      toc: yes
-      toc_depth: 6
-      toc_float: yes
-editor_options: 
-  markdown: 
-    wrap: sentence
+title: "version_quarto"
+format: html
+editor: visual
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-# Cargamos las librerias que vamos necesitando a lo largo del codigo
-
-```
 
 ```{r}
 
@@ -39,8 +25,13 @@ Estas métricas incluyen información sobre impresiones, alcance, interacciones 
 
 ```{r lectura, warning=FALSE}
 # lectura de datos en csv
-dataset_Facebook<-read.csv("datos/dataset_Facebook.csv")
+#dataset_Facebook <- read.csv("datos/dataset_Facebook.csv", stringsAsFactors = FALSE)
 # Cambiamos el nombre de las variables 
+
+library(readr)
+dataset_Facebook <- read_delim("datos/dataset_Facebook.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
 
 #datos<-read.csv("datos/datos.csv")
 ntotal <- dim(dataset_Facebook)[1] # numero de observaciones
@@ -95,9 +86,10 @@ indices.val <- indices[-c(indices.train,indices.test)]
 # Usamos el 50% de la base de datos como conjunto de entrenamiento
 # 25% para test
 # 25% para validación
-train  <- dataset_Facebook[indices.train, ]
-test   <- dataset_Facebook[indices.test, ]
+train <- dataset_Facebook[indices.train,]
+test  <- dataset_Facebook[indices.test,]
 val   <- dataset_Facebook[indices.val, ]
+
 
 ```
 
@@ -118,20 +110,56 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 #chisq.test(table(train$Nausea_Vomiting,train$Baselinehistological_staging))
 ```
 
+
+
+
+
+
+
 ### Target
 
 **Total Interactions**
 
 ```{r}
-table(train$Total.Interactions)
+#table(train$Total.Interactions)
+#summary(train$Total.Interactions)
+
 ```
+
+
+
+```{r}
+# Cargar librerías necesarias (asegurarse de que estén instaladas)
+library(ggplot2)
+
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = 'Page total likes')) +
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+
+```
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = Page.total.likes)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+
+
 
 ### Variables
 
 **Page total likes**
 
 ```{r}
-summary(train$'Page Total Likes')
+summary(train$Page.total.likes)
 
 ```
 
@@ -157,9 +185,24 @@ cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
 
 **Type**
 
+```{r}
+summary(train$Type)
+
+```
+
+
 **Category**
 
+```{r}
+summary(train$Category)
+
+```
+
 **Post Month**
+```{r}
+summary(train$Page.total.likes)
+
+```
 
 **Post Weekday**
 
