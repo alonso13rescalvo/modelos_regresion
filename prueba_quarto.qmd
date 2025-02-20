@@ -128,28 +128,10 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 
 
 
-```{r}
-# Cargar librerías necesarias (asegurarse de que estén instaladas)
-library(ggplot2)
-
-# Histograma de "Page total likes" en el conjunto de entrenamiento
-ggplot(train, aes(x = 'Page total likes')) +
-  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
-  theme_minimal() +
-  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
 
 
-```
 
 
-```{r}
-# Boxplot de "Page total likes" en el conjunto de entrenamiento
-ggplot(train, aes(y = Page.total.likes)) + 
-  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
-  theme_minimal() +
-  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
-
-```
 
 
 
@@ -164,39 +146,83 @@ summary(train$Page.total.likes)
 ```
 
 ```{r}
-# Distribución de Page.total.likes
-table(train$Page.total.likes)
+# Cargar librerías necesarias
+library(ggplot2)
 
-ggplot(train, aes(x = Page.total.likes)) +
-  geom_histogram(fill = "lightblue", color = "black", bins = 30) +
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$`Page total likes`)) + 
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
-  labs(title = "Distribución de Page Total Likes", x = "Page Total Likes", y = "Frecuencia")
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
 
-# Relación con el target (Total Interactions)
-ggplot(data = train, aes(x = Page.total.likes, y = Total.Interactions)) +
-  geom_point(alpha = 0.5, color = "blue") +
-  theme_minimal() +
-  labs(title = "Relación Page Total Likes - Total Interactions", x = "Page Total Likes", y = "Total Interactions")
-
-# Prueba de correlación (en lugar de chi-cuadrado, porque ambas son numéricas)
-cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
 
 ```
+
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$`Page total likes`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+
+
 
 **Type**
 
 ```{r}
-summary(train$Type)
+summary(train$`Type`)
 
 ```
+
+```{r}
+table(train$Type)
+
+
+```
+
+
+
 
 
 **Category**
 
 ```{r}
 summary(train$Category)
+table(train)
 
 ```
+
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$Category)) + 
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+
+```
+
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$Category)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+
 
 **Post Month**
 ```{r}
