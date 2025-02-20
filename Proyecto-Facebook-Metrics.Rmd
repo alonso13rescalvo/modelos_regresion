@@ -19,7 +19,7 @@ library(readr)
 library(corrplot)
 ```
 
-# Introducción hola
+# Introducción 
 
 **Información de los autores**
 Este proyecto ha sido realizado por el grupo 9 del grado de Ciencia e Ingeniería de datos para la asignatura de Modelos de Regresión que cuanta con los siguientes integrantes:
@@ -34,7 +34,7 @@ Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos q
 
 ```{r lectura, warning=FALSE}
 # lectura de datos en csv
-#datos<-read.csv("dataset_Facebook.csv")
+#dataset_Facebook <-read.csv("dataset_Facebook.csv")
 # Cambiamos el nombre de las variables 
 
 #datos<-read.csv("datos/datos.csv")
@@ -191,5 +191,40 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 **Share**
 
 
+### Calcular estadísticos resumen (media, desviación típica, frecuencia,...) de todas las variables de interés.
+
+Para calcular los estadíticos resumen usamos la función summary. Nos da información sobre la media, la mediana, los cuartiles, el máximo y el mínimo de cada variable.
+
+```{r}
+summary(train)
+```
+Para calcular la moda, creamos la siguiente función:
+```{r}
+summary_moda <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+
+```
+
+Utilizamos un box-plot para visualizar la distribución de la variable Total.Interactions, que es la variable objetivo en nuestro conjunto de datos, proporcionando una clara representación de la mediana, los cuartiles y los valores atípicos.
+```{r}
+# Cargar las librerías necesarias
+library(ggplot2)
+library(dplyr)
+
+# Gráfico de cajas para 'Total Interactions'
+fb_train |> 
+  ggplot(aes(x = "Total Interactions", y = `Total Interactions`)) +  
+  geom_boxplot() + 
+  theme_bw() +
+  labs(
+    title = "Distribución de las Interacciones Totales",
+    x = "Total Interactions",
+    y = "Número de Interacciones"
+  )
+
+```
 
 
