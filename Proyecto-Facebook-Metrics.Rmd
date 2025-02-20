@@ -16,7 +16,30 @@ knitr::opts_chunk$set(echo = TRUE)
 library(statip)
 library(ggplot2)
 library(readr)
-library(corrplot)
+library(dplyr)
+library(hrbrthemes)
+library(tidyverse)  
+library(cluster)    
+#library(factoextra)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(randomForest)
+library(naivebayes)
+library(purrr)
+library(xgboost)
+library(DiagrammeR)
+library(mlbench)
+library(pROC)
+library(MLmetrics)
+library(xgboost)
+#library(knitr)
+#library(kableExtra)
+#library(DALEX)
+library(counterfactuals)
+library(iml)
+
+
 ```
 
 # Introducción
@@ -133,11 +156,39 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 ### Target
 
 **Total Interactions**
+```{r}
+table(train$Total.Interactions)
+```
+
 
 
 ### Variables
 
 **Page total likes**
+```{r}
+summary(train$Page.total.likes)
+
+```
+
+```{r}
+# Distribución de Page.total.likes
+table(train$Page.total.likes)
+
+ggplot(train, aes(x = Page.total.likes)) +
+  geom_histogram(fill = "lightblue", color = "black", bins = 30) +
+  theme_minimal() +
+  labs(title = "Distribución de Page Total Likes", x = "Page Total Likes", y = "Frecuencia")
+
+# Relación con el target (Total Interactions)
+ggplot(data = train, aes(x = Page.total.likes, y = Total.Interactions)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  theme_minimal() +
+  labs(title = "Relación Page Total Likes - Total Interactions", x = "Page Total Likes", y = "Total Interactions")
+
+# Prueba de correlación (en lugar de chi-cuadrado, porque ambas son numéricas)
+cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
+
+```
 
 
 **Type**
