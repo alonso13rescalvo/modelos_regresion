@@ -1,0 +1,310 @@
+---
+title: "version_quarto"
+format: html
+editor: visual
+---
+
+
+```{r}
+
+library(ggplot2)
+
+```
+
+# Introducción
+
+**Información de los autores** Este proyecto ha sido realizado por el grupo 9 del grado de Ciencia e Ingeniería de datos para la asignatura de Modelos de Regresión que cuanta con los siguientes integrantes:
+
+-   **Cristina Rodríguez Ayllón**
+-   **Lucía Arnaldo Cuevas**
+-   **Alonso Rescalvo Casas**
+
+Nuestro datasetes es el de "Facebook Metrics Dataset".
+Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook.
+Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
+
+```{r lectura, warning=FALSE}
+# lectura de datos en csv
+#dataset_Facebook <- read.csv("datos/dataset_Facebook.csv", stringsAsFactors = FALSE)
+# Cambiamos el nombre de las variables 
+
+library(readr)
+dataset_Facebook <- read_delim("datos/dataset_Facebook.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+
+#datos<-read.csv("datos/datos.csv")
+ntotal <- dim(dataset_Facebook)[1] # numero de observaciones
+ptotal <- dim(dataset_Facebook)[2] # numero de columnas
+
+
+
+```
+
+Comprobamos que tenemos $n=$`r ntotal` observaciones y $p=$`r ptotal` variables en la base de datos.
+
+Según la descripción oficial de los datos, las variables que conforman el conjunto de datos son:
+
+(aqui iria da descripcion de las varibles y tal, la tablita que hizo Alonso)
+
+# EDA
+
+## Preguntas a resolver pre-EDA
+
+(preguntas alonso)
+
+**Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** Sí, la variable de respuesta es "Total Interactions".
+Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
+
+**¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.** Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
+
+**¿Es posible identificar la distribución que siguen las variables?** Sí, se puede hacer con gráficos y pruebas estadísticas como: + Histogramas para visualizar la forma de la distribución.
++ Boxplots para detectar outliers y asimetrías.
++ Q-Q Plots para comparar con una distribución normal.
++ Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
+
+(preguntas lucía)
+
+## Partición de los datos
+
+Realizamos la división de nuestros datos en 3 muestras: entrenamiento, validación y test.
+
+```{r particion}
+# mediante una semilla conseguimos que el ejercicio sea reproducible
+set.seed(1)
+
+
+# creamos índices
+indices <- 1:ntotal
+ntrain <- ntotal * .5
+ntest <- ntotal * .25
+nval <- ntotal - (ntrain+ntest)
+indices.train <- sample(indices, ntrain, replace = FALSE)
+indices.test <- sample(indices[-indices.train],ntest,replace=FALSE)
+indices.val <- indices[-c(indices.train,indices.test)]
+
+# Usamos el 50% de la base de datos como conjunto de entrenamiento
+# 25% para test
+# 25% para validación
+train <- dataset_Facebook[indices.train,]
+test  <- dataset_Facebook[indices.test,]
+val   <- dataset_Facebook[indices.val, ]
+
+
+```
+
+## Estudio de las variables
+
+La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target
+
+```{r}
+#esto es de mi proyecto del año pasado(cris)
+
+# Relación con el target
+
+#ggplot(data = train, aes(x = Nausea_Vomiting, fill = as.factor(Baselinehistological_staging))) +
+#  geom_bar()+
+#  labs(title = "Relación Nauseas/Vomitos - target")
+
+# prueba de chi cuadrado
+#chisq.test(table(train$Nausea_Vomiting,train$Baselinehistological_staging))
+```
+
+
+
+
+
+
+
+### Target
+
+**Total Interactions**
+
+```{r}
+#table(train$Total.Interactions)
+summary(train$`Total Interactions`)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+### Variables
+
+**Page total likes**
+
+```{r}
+summary(train$`Page total likes`)
+
+```
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$`Page total likes`)) + 
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+
+```
+
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$`Page total likes`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+#  Page total likes
+cor(train$`Total Interactions`, train$`Page total likes`, use="complete.obs")  # Correlación
+plot(train$`Page total likes`, train$`Total Interactions`, 
+     main="Page Total Likes vs Total Interactions",
+     xlab="Page Total Likes", ylab="Total Interactions", 
+     col="red", pch=16)
+
+
+
+```
+
+
+
+**Type**
+
+```{r}
+summary(train$`Type`)
+
+```
+
+```{r}
+table(train$Type)
+
+
+```
+
+```{r}
+#  Type (Gráfico de cajas ya que es una variable categórica)
+ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Type", 
+       x = "Type", y = "Total Interactions")
+
+
+```
+
+
+
+
+**Category**
+
+```{r}
+summary(train$Category)
+table(train)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+#  Category (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.factor(Category))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Category", 
+       x = "Category", y = "Total Interactions")
+```
+
+
+
+
+**Post Month**
+```{r}
+summary(train$Page.total.likes)
+
+```
+
+```{r}
+#  Post Month (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = as.factor(`Post Month`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Month", 
+       x = "Post Month", y = "Total Interactions")
+```
+
+
+
+**Post Weekday**
+
+
+
+```{r}
+#  Post Weekday (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Weekday", 
+       x = "Post Weekday", y = "Total Interactions")
+
+
+```
+
+
+**Post Hour**
+
+```{r}
+#  Post Hour (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = as.factor(`Post Hour`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Hour", 
+       x = "Post Hour", y = "Total Interactions")
+```
+
+
+**Paid**
+
+**Lifetime Post Total Reach**
+
+**Lifetime Post Total Impressions**
+
+**Lifetime Engaged Users**
+
+**Lifetime Post Consumers**
+
+**Lifetime Post Consumptions**
+
+**Lifetime Post Impressions by people who have liked your Page**
+
+**Lifetime Post reach by people who like your Page**
+
+**Lifetime People who have liked your Page and engaged with your post**
+
+**Comment**
+
+**Like**
+
+**Share**
