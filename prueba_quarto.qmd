@@ -222,12 +222,6 @@ table(train)
 ```
 
 
-
-
-
-
-
-
 ```{r}
 #  Category (Gráfico de cajas)
 ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.factor(Category))) +
