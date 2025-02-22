@@ -122,7 +122,11 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 
 ```{r}
 #table(train$Total.Interactions)
+
 #summary(train$Total.Interactions)
+
+summary(train$`Total Interactions`)
+
 
 ```
 
@@ -141,7 +145,11 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 **Page total likes**
 
 ```{r}
+
 summary(train$Page.total.likes)
+
+summary(train$`Page total likes`)
+
 
 ```
 
@@ -171,16 +179,45 @@ ggplot(train, aes(y = train$`Page total likes`)) +
 
 
 
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+#  Page total likes
+cor(train$`Total Interactions`, train$`Page total likes`, use="complete.obs")  # Correlación
+plot(train$`Page total likes`, train$`Total Interactions`, 
+     main="Page Total Likes vs Total Interactions",
+     xlab="Page Total Likes", ylab="Total Interactions", 
+     col="red", pch=16)
+```
+
+
+
+
+
+
 
 **Type**
 
 ```{r}
-summary(train$`Type`)
+summary(train$`Type`) 
 
 ```
 
 ```{r}
 table(train$Type)
+
+
+```
+
+
+```{r}
+#  Type (Gráfico de cajas ya que es una variable categórica)
+ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Type", 
+       x = "Type", y = "Total Interactions")
 
 
 ```
@@ -199,6 +236,7 @@ table(train)
 
 
 ```{r}
+
 # Cargar librerías necesarias
 library(ggplot2)
 
@@ -209,6 +247,13 @@ ggplot(train, aes(x = train$Category)) +
   labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
 
 
+
+#  Category (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.factor(Category))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Category", 
+       x = "Category", y = "Total Interactions")
 ```
 
 
@@ -230,9 +275,51 @@ summary(train$Page.total.likes)
 
 ```
 
+
 **Post Weekday**
 
 **Post Hour**
+
+
+```{r}
+#  Post Month (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = as.factor(`Post Month`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Month", 
+       x = "Post Month", y = "Total Interactions")
+```
+
+
+
+**Post Weekday**
+
+
+
+```{r}
+#  Post Weekday (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Weekday", 
+       x = "Post Weekday", y = "Total Interactions")
+
+
+```
+
+
+**Post Hour**
+
+```{r}
+#  Post Hour (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = as.factor(`Post Hour`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Hour", 
+       x = "Post Hour", y = "Total Interactions")
+```
+
+
 
 **Paid**
 

@@ -126,12 +126,21 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 table(train$Total.Interactions)
 ```
 
+```{r}
+#table(train$Total.Interactions)
+summary(train$`Total Interactions`)
+
+```
+
+
 ### Variables
 
 **Page total likes**
 
 ```{r}
 summary(train$'Page Total Likes')
+
+summary(train$`Page total likes`)
 
 ```
 
@@ -153,6 +162,43 @@ ggplot(data = train, aes(x = Page.total.likes, y = Total.Interactions)) +
 # Prueba de correlación (en lugar de chi-cuadrado, porque ambas son numéricas)
 cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
 
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$`Page total likes`)) + 
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+
+```
+
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$`Page total likes`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+#  Page total likes
+cor(train$`Total Interactions`, train$`Page total likes`, use="complete.obs")  # Correlación
+plot(train$`Page total likes`, train$`Total Interactions`, 
+     main="Page Total Likes vs Total Interactions",
+     xlab="Page Total Likes", ylab="Total Interactions", 
+     col="red", pch=16)
+
+
+
 ```
 
 **Type**
@@ -165,6 +211,111 @@ cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
 
 **Post Hour**
 
+=======
+```{r}
+summary(train$`Type`)
+
+```
+
+```{r}
+table(train$Type)
+
+
+```
+
+```{r}
+#  Type (Gráfico de cajas ya que es una variable categórica)
+ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Type", 
+       x = "Type", y = "Total Interactions")
+
+
+```
+
+
+**Category**
+
+```{r}
+summary(train$Category)
+table(train)
+
+```
+
+
+```{r}
+#  Category (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.factor(Category))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Category", 
+       x = "Category", y = "Total Interactions")
+```
+
+
+**Post Month**
+
+
+```{r}
+summary(train$`Post Month`)
+
+```
+
+```{r}
+#  Post Month (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = as.factor(`Post Month`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Month", 
+       x = "Post Month", y = "Total Interactions")
+```
+
+
+**Post Weekday**
+
+
+```{r}
+summary(train$`Post Weekday`)
+
+```
+
+
+
+```{r}
+#  Post Weekday (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Weekday", 
+       x = "Post Weekday", y = "Total Interactions")
+
+
+```
+
+
+**Post Hour**
+
+
+```{r}
+summary(train$`Post Hour`)
+
+```
+
+
+
+
+```{r}
+#  Post Hour (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = as.factor(`Post Hour`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Hour", 
+       x = "Post Hour", y = "Total Interactions")
+```
+
+
+>>>>>>> main
 **Paid**
 
 **Lifetime Post Total Reach**
