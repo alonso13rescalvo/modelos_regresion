@@ -142,6 +142,9 @@ summary(train$`Page total likes`)
 
 ```
 
+El análisis de la variable Page total likes muestra que los valores oscilan entre un mínimo de 81,370 y un máximo de 139,441. La mediana se sitúa en 128,032, mientras que la media es ligeramente menor, con un valor de 122,570, lo que sugiere una leve asimetría hacia la izquierda. Esto indica que la mayoría de las publicaciones tienen un número de likes relativamente alto, concentrándose entre los valores de 120,000 y 140,000, aunque existen algunas con menos de 100,000 likes.
+
+
 
 ```{r}
 # Cargar librerías necesarias
@@ -156,6 +159,7 @@ ggplot(train, aes(x = train$`Page total likes`)) +
 
 ```
 
+Al observar el histograma, se aprecia que la distribución de los likes no es completamente uniforme, sino que tiende a agruparse en los valores más elevados. 
 
 
 ```{r}
@@ -166,6 +170,8 @@ ggplot(train, aes(y = train$`Page total likes`)) +
   labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
 
 ```
+
+El boxplot refuerza esta idea, mostrando que la mayor parte de los datos se encuentra dentro de un rango definido, sin valores extremos que se consideren atípicos.
 
 
 
@@ -182,8 +188,9 @@ plot(train$`Page total likes`, train$`Total Interactions`,
 ```
 
 
+En cuanto a la relación entre Page total likes y Total Interactions, la correlación obtenida es baja o moderada, lo que indica que el número de likes en una página no determina de manera significativa el nivel de interacción de sus publicaciones. El diagrama de dispersión confirma esta observación, ya que no se percibe una tendencia clara entre ambas variables. Hay casos en los que páginas con un menor número de likes generan una gran cantidad de interacciones, mientras que otras con más likes no necesariamente logran el mismo nivel de engagement.
 
-
+Esto sugiere que la cantidad de likes en una página no es el único factor que influye en la interacción del público. Es probable que variables como el tipo de publicación, la hora en la que se publica o el contenido del mensaje tengan un impacto mayor en el número de interacciones.
 
 
 
