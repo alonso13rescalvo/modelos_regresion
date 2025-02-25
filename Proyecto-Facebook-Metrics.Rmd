@@ -211,7 +211,7 @@ plot(train$`Page total likes`, train$`Total Interactions`,
 
 **Post Hour**
 
-=======
+
 ```{r}
 summary(train$`Type`)
 
@@ -315,7 +315,7 @@ ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = a
 ```
 
 
->>>>>>> main
+
 **Paid**
 
 **Lifetime Post Total Reach**

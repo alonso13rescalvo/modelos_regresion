@@ -344,3 +344,21 @@ ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = a
 **Like**
 
 **Share**
+
+
+
+# Regresión lineal simple
+
+
+
+# Regresión lineal múltiple
+
+
+
+
+
+
+
+
+
+
