@@ -133,8 +133,7 @@ summary(train$`Page total likes`)
 
 
 ```{r}
-# Cargar librerías necesarias
-library(ggplot2)
+
 
 # Histograma de "Page total likes" en el conjunto de entrenamiento
 ggplot(train, aes(x = train$`Page total likes`)) + 
@@ -211,8 +210,7 @@ table(train$Category)
 
 ```{r}
 
-# Cargar librerías necesarias
-library(ggplot2)
+
 
 # Histograma de "Page total likes" en el conjunto de entrenamiento
 ggplot(train, aes(x = train$Category)) + 
