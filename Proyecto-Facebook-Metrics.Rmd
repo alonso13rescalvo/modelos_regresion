@@ -127,7 +127,6 @@ table(train$Total.Interactions)
 ```
 
 ```{r}
-#table(train$Total.Interactions)
 summary(train$`Total Interactions`)
 
 ```
@@ -138,30 +137,13 @@ summary(train$`Total Interactions`)
 **Page total likes**
 
 ```{r}
-summary(train$'Page Total Likes')
 
 summary(train$`Page total likes`)
 
 ```
 
+
 ```{r}
-# Distribución de Page.total.likes
-table(train$Page.total.likes)
-
-ggplot(train, aes(x = Page.total.likes)) +
-  geom_histogram(fill = "lightblue", color = "black", bins = 30) +
-  theme_minimal() +
-  labs(title = "Distribución de Page Total Likes", x = "Page Total Likes", y = "Frecuencia")
-
-# Relación con el target (Total Interactions)
-ggplot(data = train, aes(x = Page.total.likes, y = Total.Interactions)) +
-  geom_point(alpha = 0.5, color = "blue") +
-  theme_minimal() +
-  labs(title = "Relación Page Total Likes - Total Interactions", x = "Page Total Likes", y = "Total Interactions")
-
-# Prueba de correlación (en lugar de chi-cuadrado, porque ambas son numéricas)
-cor.test(train$Page.total.likes, train$Total.Interactions, method = "pearson")
-
 # Cargar librerías necesarias
 library(ggplot2)
 
@@ -175,7 +157,6 @@ ggplot(train, aes(x = train$`Page total likes`)) +
 ```
 
 
-
 ```{r}
 # Boxplot de "Page total likes" en el conjunto de entrenamiento
 ggplot(train, aes(y = train$`Page total likes`)) + 
@@ -184,7 +165,6 @@ ggplot(train, aes(y = train$`Page total likes`)) +
   labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
 
 ```
-
 
 ```{r}
 # Cargar librerías necesarias
@@ -196,24 +176,18 @@ plot(train$`Page total likes`, train$`Total Interactions`,
      main="Page Total Likes vs Total Interactions",
      xlab="Page Total Likes", ylab="Total Interactions", 
      col="red", pch=16)
-
-
-
 ```
+
+
+
+
 
 **Type**
 
-**Category**
-
-**Post Month**
-
-**Post Weekday**
-
-**Post Hour**
 
 
 ```{r}
-summary(train$`Type`)
+summary(train$`Type`) 
 
 ```
 
@@ -222,6 +196,7 @@ table(train$Type)
 
 
 ```
+
 
 ```{r}
 #  Type (Gráfico de cajas ya que es una variable categórica)
@@ -235,22 +210,46 @@ ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
 ```
 
 
+
 **Category**
 
 ```{r}
 summary(train$Category)
-table(train)
+table(train$Category)
 
 ```
 
 
 ```{r}
+
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$Category)) + 
+  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+
+
 #  Category (Gráfico de cajas)
 ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.factor(Category))) +
   geom_boxplot() +
   theme_minimal() +
   labs(title = "Distribución de Total Interactions por Category", 
        x = "Category", y = "Total Interactions")
+```
+
+
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$Category)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
 ```
 
 
@@ -339,3 +338,133 @@ ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = a
 **Like**
 
 **Share**
+
+
+
+
+# Regresión lineal simple
+
+
+```{r}
+# Eliminar filas con valores faltantes en cualquier columna
+train_clean <- na.omit(train)
+
+# Verificar que no hay valores faltantes después de la limpieza
+colSums(is.na(train_clean))
+```
+
+
+**1: Ajustar el modelo de regresión lineal**
+
+```{r}
+# Ajustar el modelo de regresión lineal
+modelo <- lm(`Total Interactions` ~ `Page total likes` + Type + Category + `Post Month` + 
+             `Post Weekday` + `Post Hour` + Paid + `Lifetime Post Total Reach` + 
+             `Lifetime Post Total Impressions` + `Lifetime Engaged Users` + 
+             `Lifetime Post Consumers` + `Lifetime Post Consumptions` + 
+             `Lifetime Post Impressions by people who have liked your Page` + 
+             `Lifetime Post reach by people who like your Page` + 
+             `Lifetime People who have liked your Page and engaged with your post` + 
+             comment + like + share, data = train_clean)
+
+# Obtener estimadores de los parámetros y errores estándar
+estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
+
+# Imprimir los resultados
+cat("Estimadores para los parámetros del modelo:\n")
+print(estimadores)
+```
+
+
+**2: Resumen del modelo**
+
+```{r}
+# Obtener resumen del modelo
+summary(modelo)
+```
+
+
+**3: Tabla ANOVA**
+
+```{r}
+# Obtener y mostrar la tabla ANOVA
+tabla_anova <- anova(modelo)
+cat("\nTabla ANOVA:\n")
+print(tabla_anova)
+```
+
+
+**4: Estudiar los residuos**
+
+Gráfico de residuos vs. valores ajustados
+
+```{r}
+# Obtener los residuos
+residuos <- resid(modelo)
+
+# 1. Gráfico de residuos vs. valores ajustados
+valores_ajustados <- fitted(modelo)
+plot(valores_ajustados, residuos,
+     main = "Residuos vs Valores Ajustados",
+     xlab = "Valores Ajustados",
+     ylab = "Residuos",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+```
+
+Histograma de los residuos
+
+```{r}
+# 2. Histograma de los residuos
+hist(residuos,
+     main = "Histograma de Residuos",
+     xlab = "Residuos",
+     col = "lightblue", border = "black")
+```
+
+QQ-Plot de residuos
+
+```{r}
+# 3. QQ-Plot de residuos
+qqnorm(residuos, main = "QQ-Plot de los Residuos")
+qqline(residuos, col = "red", lwd = 2)
+```
+
+Pruebas de normalidad de los residuos
+
+```{r}
+# 4. Pruebas de normalidad de los residuos
+shapiro_test <- shapiro.test(residuos)
+cat("Prueba de Shapiro-Wilk para normalidad de los residuos:\n")
+print(shapiro_test)
+```
+
+Gráfico de residuos vs. una variable predictora (ejemplo: Page total likes)
+
+```{r}
+# Gráfico de residuos vs. like
+plot(train_clean$like, residuos,
+     main = "Residuos vs Like",
+     xlab = "Like",
+     ylab = "Residuos",
+     pch = 19, col = "purple")
+abline(h = 0, col = "red", lwd = 2)
+```
+
+
+**5: Diagnóstico del modelo**
+
+```{r}
+
+```
+
+
+
+
+
+# Regresión lineal múltiple
+
+
+
+
+
