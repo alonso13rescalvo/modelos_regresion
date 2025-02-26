@@ -8,9 +8,6 @@ editor: visual
 ```{r}
 
 library(ggplot2)
-library(dplyr)
-library(knitr)
-library(gt)
 
 ```
 
@@ -124,75 +121,14 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 **Total Interactions**
 
 ```{r}
+#table(train$Total.Interactions)
+
+#summary(train$Total.Interactions)
 
 summary(train$`Total Interactions`)
 
 
 ```
-
-```{r}
-library(ggplot2)
-ggplot(train, aes(x = `Total Interactions`)) +
-  geom_histogram(binwidth = 50, fill = "lightblue", color = "black") +
-  theme_minimal() +
-  labs(title = "Distribución del Target (Total Interactions)", x = "Total Interactions", y = "Frecuencia")
-
-```
-
-
-```{r}
-ggplot(train, aes(y = `Total Interactions`)) +
-  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red") +
-  theme_minimal() +
-  labs(title = "Boxplot del Target (Total Interactions)", y = "Total Interactions")
-
-```
-
-```{r}
-Q1 <- quantile(train$`Total Interactions`, 0.25)
-Q3 <- quantile(train$`Total Interactions`, 0.75)
-IQR <- Q3 - Q1
-limite_inferior <- Q1 - 1.5 * IQR
-limite_superior <- Q3 + 1.5 * IQR
-
-outliers <- train %>%
-  filter(`Total Interactions` < limite_inferior | `Total Interactions` > limite_superior)
-
-print(outliers)  # Muestra los valores atípicos
-
-```
-
-
-```{r}
-cor_matrix <- cor(train[, c("Total Interactions", "Page total likes", "Lifetime Post Total Reach",
-                            "Lifetime Post Total Impressions")], use = "complete.obs")
-print(cor_matrix)
-
-```
-
-```{r}
-# Instalar y cargar pheatmap (si no lo tienes)
-#install.packages("pheatmap")
-library(pheatmap)
-
-# Seleccionar solo variables numéricas
-numeric_vars <- train[, sapply(train, is.numeric)]
-
-# Calcular la matriz de correlación
-cor_matrix <- cor(numeric_vars, use = "complete.obs")
-
-# Renombrar las variables con nombres más cortos
-colnames(cor_matrix) <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18")  # Edita según tus variables
-rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
-
-# Crear heatmap con nombres cortos
-pheatmap(cor_matrix, display_numbers = TRUE, 
-         color = colorRampPalette(c("cadetblue1", "mediumpurple1", "pink1"))(50))
-
-
-
-```
-
 
 
 
@@ -257,21 +193,6 @@ En cuanto a la relación entre Page total likes y Total Interactions, la correla
 Esto sugiere que la cantidad de likes en una página no es el único factor que influye en la interacción del público. Es probable que variables como el tipo de publicación, la hora en la que se publica o el contenido del mensaje tengan un impacto mayor en el número de interacciones.
 
 
-```{r}
-trainmod <- train %>%
-  mutate(Page_total_likes_group = cut(`Page total likes`, breaks = 5))  # Agrupamos en intervalos
-
-tabla_frecuencias_likes <- trainmod %>%
-  count(Page_total_likes_group) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
-knitr::kable(tabla_frecuencias_likes, digits = 4)
-
-```
-
-
-
 
 **Type**
 
@@ -298,16 +219,6 @@ ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
 
 ```
 
-```{r}
-tabla_frecuencias_type <- trainmod %>%
-  count(Type) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
-
-knitr::kable(tabla_frecuencias_type, digits = 4)
-
-```
 
 
 
@@ -353,17 +264,6 @@ ggplot(train, aes(y = train$Category)) +
 
 ```
 
-```{r}
-tabla_frecuencias_category <- trainmod %>%
-  count(Category) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
-
-knitr::kable(tabla_frecuencias_category, digits = 4)
-
-```
-
 
 
 **Post Month**
@@ -380,17 +280,6 @@ ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = 
   theme_minimal() +
   labs(title = "Distribución de Total Interactions por Post Month", 
        x = "Post Month", y = "Total Interactions")
-```
-
-
-```{r}
-tabla_frecuencias_month <- trainmod %>%
-  count(`Post Month`) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
-
-knitr::kable(tabla_frecuencias_month, digits = 4)
 ```
 
 
@@ -414,18 +303,6 @@ ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill 
 ```
 
 
-```{r}
-tabla_frecuencias_weekday <- trainmod %>%
-  count(`Post Weekday`) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
-knitr::kable(tabla_frecuencias_weekday, digits = 4)
-
-```
-
-
-
 **Post Hour**
 
 ```{r}
@@ -443,16 +320,34 @@ ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = a
        x = "Post Hour", y = "Total Interactions")
 ```
 
-```{r}
-tabla_frecuencias_hour <- trainmod %>%
-  count(`Post Hour`) %>%
-  mutate(f = n / nrow(train),
-         N = cumsum(n),
-         F = cumsum(f))
 
-knitr::kable(tabla_frecuencias_hour, digits = 4)
+
+**Post Weekday**
+
+
+
+```{r}
+#  Post Weekday (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Weekday", 
+       x = "Post Weekday", y = "Total Interactions")
+
+
 ```
 
+
+**Post Hour**
+
+```{r}
+#  Post Hour (Gráfico de cajas)
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = as.factor(`Post Hour`))) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Distribución de Total Interactions por Post Hour", 
+       x = "Post Hour", y = "Total Interactions")
+```
 
 
 
@@ -652,121 +547,10 @@ abline(h = 0, col = "red", lwd = 2)
 **5: Diagnóstico del modelo**
 
 ```{r}
-# 2. Prueba de homocedasticidad (Breusch-Pagan)
-library(lmtest)
-breusch_pagan <- bptest(modelo)
-cat("\nPrueba de Breusch-Pagan para homocedasticidad:\n")
-print(breusch_pagan)
 
 ```
 
 
-```{r}
-# 3. Estadística Durbin-Watson para autocorrelación de los residuos
-durbin_watson <- dwtest(modelo)
-cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
-print(durbin_watson)
-```
-```{r}
-# 3. Estadística Durbin-Watson para autocorrelación de los residuos
-durbin_watson <- dwtest(modelo)
-cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
-print(durbin_watson)
-```
-**Paso 6: Leverage y observaciones influyentes**
-Calcular leverage
-
-```{r}
-# Calcular leverage
-leverage <- hatvalues(modelo)
-
-# Umbral para leverage alto
-p <- length(coef(modelo))  # Número de parámetros (incluyendo el intercepto)
-n <- nrow(train)  # Número de observaciones
-leverage_threshold <- 2 * p / n
-
-# Identificar observaciones con leverage alto
-leverage_high <- which(leverage > leverage_threshold)
-
-# Resultados
-cat("Valores de leverage:\n")
-print(leverage)
-cat("\nUmbral para leverage alto:", leverage_threshold, "\n")
-cat("\nObservaciones con leverage alto (si las hay):\n")
-print(leverage_high)
-```
-
-Gráfico de leverage
-
-```{r}
-# Gráfico de leverage
-plot(leverage, 
-     main = "Leverage de las Observaciones",
-     xlab = "Índice de Observación",
-     ylab = "Leverage",
-     pch = 19, col = "blue", ylim=c(min(leverage)*.9,max(leverage)*1.05))
-abline(h = leverage_threshold, col = "red", lwd = 2, lty = 2)  # Línea del umbral
-text(leverage_high, leverage[leverage_high], labels = leverage_high, pos = 3, col = "red")
-```
-
-**Paso 7: Distancia de Cook, DFBETAS y DFFITS**
-Calcular Distancia de Cook, DFBETAS y DFFITS
-
-```{r}
-# 1. Calcular Distancia de Cook
-cooks_distance <- cooks.distance(modelo)
-
-# 2. Calcular DFBETAS
-dfbetas_values <- dfbetas(modelo)
-
-# 3. Calcular DFFITS
-dffits_values <- dffits(modelo)
-
-# Umbrales sugeridos
-cooks_threshold <- 4 / n  # Umbral para Distancia de Cook
-dffits_threshold <- 2 * sqrt(p / n)  # Umbral para DFFITS
-
-# Resultados
-cat("Distancia de Cook (primeras 10 observaciones):\n")
-print(head(cooks_distance, 10))
-cat("\nObservaciones con Distancia de Cook alta (> ", cooks_threshold, "):\n")
-print(which(cooks_distance > cooks_threshold))
-cat("\nDFBETAS (primeras 10 observaciones):\n")
-print(head(dfbetas_values, 10))
-cat("\nDFFITS (primeras 10 observaciones):\n")
-print(head(dffits_values, 10))
-cat("\nObservaciones con DFFITS alto (> ", dffits_threshold, "):\n")
-print(which(abs(dffits_values) > dffits_threshold))
-```
-
-
-Graficar Distancia de Cook
-```{r}
-# Graficar Distancia de Cook
-plot(cooks_distance,
-     main = "Distancia de Cook",
-     xlab = "Índice de Observación",
-     ylab = "Distancia de Cook",
-     pch = 19, col = "blue", ylim=c(min(cooks_distance)*.9,max(cooks_distance)*1.05))
-abline(h = cooks_threshold, col = "red", lwd = 2, lty = 2)
-text(which(cooks_distance > cooks_threshold), cooks_distance[cooks_distance > cooks_threshold],
-     labels = which(cooks_distance > cooks_threshold), pos = 3, col = "red")
-```
-
-Graficar DFFITS
-```{r}
-
-# Graficar DFFITS
-plot(dffits_values,
-     main = "DFFITS",
-     xlab = "Índice de Observación",
-     ylab = "DFFITS",
-     pch = 19, col = "green", ylim=c(min(dffits_values)*.85,max(dffits_values)*1.07))
-abline(h = c(dffits_threshold, -dffits_threshold), col = "red", lwd = 2, lty = 2)
-text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_values) > dffits_threshold],
-     labels = which(abs(dffits_values) > dffits_threshold), pos = 3, col = "red")
-
-```
 
 
 
