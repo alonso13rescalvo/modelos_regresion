@@ -8,6 +8,9 @@ editor: visual
 ```{r}
 
 library(ggplot2)
+library(dplyr)
+library(knitr)
+library(gt)
 
 ```
 
@@ -121,14 +124,75 @@ La idea es que vayamos viendo que distribucion sigue cada variables (con un hist
 **Total Interactions**
 
 ```{r}
-#table(train$Total.Interactions)
-
-#summary(train$Total.Interactions)
 
 summary(train$`Total Interactions`)
 
 
 ```
+
+```{r}
+library(ggplot2)
+ggplot(train, aes(x = `Total Interactions`)) +
+  geom_histogram(binwidth = 50, fill = "lightblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribución del Target (Total Interactions)", x = "Total Interactions", y = "Frecuencia")
+
+```
+
+
+```{r}
+ggplot(train, aes(y = `Total Interactions`)) +
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red") +
+  theme_minimal() +
+  labs(title = "Boxplot del Target (Total Interactions)", y = "Total Interactions")
+
+```
+
+```{r}
+Q1 <- quantile(train$`Total Interactions`, 0.25)
+Q3 <- quantile(train$`Total Interactions`, 0.75)
+IQR <- Q3 - Q1
+limite_inferior <- Q1 - 1.5 * IQR
+limite_superior <- Q3 + 1.5 * IQR
+
+outliers <- train %>%
+  filter(`Total Interactions` < limite_inferior | `Total Interactions` > limite_superior)
+
+print(outliers)  # Muestra los valores atípicos
+
+```
+
+
+```{r}
+cor_matrix <- cor(train[, c("Total Interactions", "Page total likes", "Lifetime Post Total Reach",
+                            "Lifetime Post Total Impressions")], use = "complete.obs")
+print(cor_matrix)
+
+```
+
+```{r}
+# Instalar y cargar pheatmap (si no lo tienes)
+#install.packages("pheatmap")
+library(pheatmap)
+
+# Seleccionar solo variables numéricas
+numeric_vars <- train[, sapply(train, is.numeric)]
+
+# Calcular la matriz de correlación
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Renombrar las variables con nombres más cortos
+colnames(cor_matrix) <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18")  # Edita según tus variables
+rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
+
+# Crear heatmap con nombres cortos
+pheatmap(cor_matrix, display_numbers = TRUE, 
+         color = colorRampPalette(c("cadetblue1", "mediumpurple1", "pink1"))(50))
+
+
+
+```
+
 
 
 
@@ -193,6 +257,21 @@ En cuanto a la relación entre Page total likes y Total Interactions, la correla
 Esto sugiere que la cantidad de likes en una página no es el único factor que influye en la interacción del público. Es probable que variables como el tipo de publicación, la hora en la que se publica o el contenido del mensaje tengan un impacto mayor en el número de interacciones.
 
 
+```{r}
+trainmod <- train %>%
+  mutate(Page_total_likes_group = cut(`Page total likes`, breaks = 5))  # Agrupamos en intervalos
+
+tabla_frecuencias_likes <- trainmod %>%
+  count(Page_total_likes_group) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
+knitr::kable(tabla_frecuencias_likes, digits = 4)
+
+```
+
+
+
 
 **Type**
 
@@ -219,6 +298,16 @@ ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
 
 ```
 
+```{r}
+tabla_frecuencias_type <- trainmod %>%
+  count(Type) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
+
+knitr::kable(tabla_frecuencias_type, digits = 4)
+
+```
 
 
 
@@ -264,6 +353,17 @@ ggplot(train, aes(y = train$Category)) +
 
 ```
 
+```{r}
+tabla_frecuencias_category <- trainmod %>%
+  count(Category) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
+
+knitr::kable(tabla_frecuencias_category, digits = 4)
+
+```
+
 
 
 **Post Month**
@@ -280,6 +380,17 @@ ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = 
   theme_minimal() +
   labs(title = "Distribución de Total Interactions por Post Month", 
        x = "Post Month", y = "Total Interactions")
+```
+
+
+```{r}
+tabla_frecuencias_month <- trainmod %>%
+  count(`Post Month`) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
+
+knitr::kable(tabla_frecuencias_month, digits = 4)
 ```
 
 
@@ -303,6 +414,18 @@ ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill 
 ```
 
 
+```{r}
+tabla_frecuencias_weekday <- trainmod %>%
+  count(`Post Weekday`) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
+knitr::kable(tabla_frecuencias_weekday, digits = 4)
+
+```
+
+
+
 **Post Hour**
 
 ```{r}
@@ -320,34 +443,16 @@ ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = a
        x = "Post Hour", y = "Total Interactions")
 ```
 
-
-
-**Post Weekday**
-
-
-
 ```{r}
-#  Post Weekday (Gráfico de cajas)
-ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
-  geom_boxplot() +
-  theme_minimal() +
-  labs(title = "Distribución de Total Interactions por Post Weekday", 
-       x = "Post Weekday", y = "Total Interactions")
+tabla_frecuencias_hour <- trainmod %>%
+  count(`Post Hour`) %>%
+  mutate(f = n / nrow(train),
+         N = cumsum(n),
+         F = cumsum(f))
 
-
+knitr::kable(tabla_frecuencias_hour, digits = 4)
 ```
 
-
-**Post Hour**
-
-```{r}
-#  Post Hour (Gráfico de cajas)
-ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`, fill = as.factor(`Post Hour`))) +
-  geom_boxplot() +
-  theme_minimal() +
-  labs(title = "Distribución de Total Interactions por Post Hour", 
-       x = "Post Hour", y = "Total Interactions")
-```
 
 
 
