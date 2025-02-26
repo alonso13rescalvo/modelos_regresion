@@ -452,7 +452,7 @@ knitr::kable(tabla_frecuencias_hour, digits = 4)
 
 
 
-# Regresión lineal simple
+# Regresión lineal pruebas
 
 
 ```{r}
@@ -570,7 +570,7 @@ abline(h = 0, col = "red", lwd = 2)
 
 
 
-
+# Regresión lineal simple
 
 # Regresión lineal múltiple
 
