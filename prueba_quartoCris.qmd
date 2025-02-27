@@ -152,24 +152,44 @@ Gráfico de correlación de múltiples variables
 
 ```{r}
 # Seleccionar solo las variables numéricas
-train_numeric <- train %>%
+train_numeric1 <- train %>%
   select(`Page total likes`, 
          `Lifetime Post Total Reach`, 
          `Lifetime Post Total Impressions`, 
-         `Lifetime Engaged Users`, 
+         `Lifetime Engaged Users`
+         )
+plot(train_numeric1)
+
+
+```
+
+
+```{r}
+# Seleccionar solo las variables numéricas
+train_numeric2 <- train %>%
+  select( 
          `Lifetime Post Consumers`, 
          `Lifetime Post Consumptions`, 
          `Lifetime Post Impressions by people who have liked your Page`, 
-         `Lifetime Post reach by people who like your Page`, 
-         `Lifetime People who have liked your Page and engaged with your post`, 
+         `Lifetime Post reach by people who like your Page`
+         )
+
+plot(train_numeric2)
+```
+
+```{r}
+# Seleccionar solo las variables numéricas
+train_numeric3 <- train %>%
+  select( 
          comment, 
          like, 
          share, 
          `Total Interactions`)
 
 
-```
+plot(train_numeric3)
 
+```
 
 
 ```{r}
@@ -807,6 +827,18 @@ Resultados
 
 
 # Regresión lineal simple
+like
 
 # Regresión lineal múltiple
+todas
+
+
+#Modelo explicativo 
+Todas menos share, comment y like
+
+# Modelo predictivo
+con share, comment y like
+
+
+
 
