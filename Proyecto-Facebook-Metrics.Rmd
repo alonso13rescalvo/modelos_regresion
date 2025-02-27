@@ -432,58 +432,6 @@ knitr::kable(tabla_frecuencias_hour, digits = 4)
 
 **Share**
 
-## Matriz de correlación
-
-```{r}
-# Cargar las bibliotecas
-library(tidyverse)
-library(ggplot2)
-library(corrplot)
-```
-
-Analisis de correlacion
-
-```{r}
-# Seleccionar solo las variables numéricas en el conjunto de entrenamiento
-train_numeric <- train %>% select(where(is.numeric))
-
-# Calcular la matriz de correlación
-correlacion <- cor(train_numeric, use = "complete.obs")
-
-# Convertir la matriz en un marco de datos
-cor_df <- as.data.frame(as.table(correlacion))
-colnames(cor_df) <- c("Var1", "Var2", "value")
-
-# Crear el heatmap con ggplot2
-ggplot(cor_df, aes(Var1, Var2, fill = value)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "white", high = "red", mid = "lightblue", midpoint = 0) +
-  theme_minimal() +
-  labs(title = "Matriz de Correlación - Conjunto de Entrenamiento") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-PCA
-
-```{r}
-# Seleccionar solo las variables numéricas para PCA
-pca_df <- train %>% select(where(is.numeric))
-
-# Escalar los datos y aplicar PCA
-pca_result <- prcomp(pca_df, scale = TRUE)
-
-# Resumen del PCA
-summary(pca_result)
-
-# Visualizar el biplot
-biplot(pca_result)
-```
-
-```{r}
-# Visualizar la matriz de correlación con corrplot
-corrplot(corr_matrix, method = "color", type = "upper", order = "hclust", 
-         tl.col = "black", tl.srt = 45, addCoef.col = "black")
-```
 
 # Regresión lineal pruebas
 
