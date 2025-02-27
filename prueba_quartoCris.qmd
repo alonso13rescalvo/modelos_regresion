@@ -9,7 +9,7 @@ editor: visual
 library(ggplot2)
 library(dplyr)
 library(knitr)
-library(gt)
+#library(gt)
 library(pheatmap)
 
 ```
@@ -52,7 +52,7 @@ Según la descripción oficial de los datos, las variables que conforman el conj
 
 ## Preguntas a resolver pre-EDA
 
-(preguntas alonso)
+**(preguntas alonso)**
 
 **Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
 
@@ -60,7 +60,7 @@ Según la descripción oficial de los datos, las variables que conforman el conj
 
 **¿Es posible identificar la distribución que siguen las variables?** Sí, se puede hacer con gráficos y pruebas estadísticas como: + Histogramas para visualizar la forma de la distribución. + Boxplots para detectar outliers y asimetrías. + Q-Q Plots para comparar con una distribución normal. + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
-(preguntas lucía)
+**(preguntas lucía)**
 
 ## Partición de los datos
 
@@ -146,6 +146,40 @@ pheatmap(cor_matrix, display_numbers = TRUE,
          color = colorRampPalette(c("#98F5FF", "white", "#AB82FF"))(50))
 
 ```
+
+
+Gráfico de correlación de múltiples variables 
+
+```{r}
+# Seleccionar solo las variables numéricas
+train_numeric <- train %>%
+  select(`Page total likes`, 
+         `Lifetime Post Total Reach`, 
+         `Lifetime Post Total Impressions`, 
+         `Lifetime Engaged Users`, 
+         `Lifetime Post Consumers`, 
+         `Lifetime Post Consumptions`, 
+         `Lifetime Post Impressions by people who have liked your Page`, 
+         `Lifetime Post reach by people who like your Page`, 
+         `Lifetime People who have liked your Page and engaged with your post`, 
+         comment, 
+         like, 
+         share, 
+         `Total Interactions`)
+
+
+```
+
+
+
+```{r}
+# Crear la matriz de gráficos de dispersión
+par(mfrow=c(2,2))
+#pairs(train_numeric)
+# Usando plot() directamente
+plot(train_numeric)
+```
+
 
 
 ### Variables
@@ -269,11 +303,11 @@ table(train$Category)
 # Cargar librerías necesarias
 library(ggplot2)
 
-# Histograma de "Page total likes" en el conjunto de entrenamiento
+# Histograma de "Category" en el conjunto de entrenamiento
 ggplot(train, aes(x = train$Category)) + 
   geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
-  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+  labs(title = "Distribución de Category (Train)", x = "Page total likes", y = "Frecuencia")
 
 
 
@@ -286,11 +320,11 @@ ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`, fill = as.f
 ```
 
 ```{r}
-# Boxplot de "Page total likes" en el conjunto de entrenamiento
+# Boxplot de "Category" en el conjunto de entrenamiento
 ggplot(train, aes(y = train$Category)) + 
   geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
   theme_minimal() +
-  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+  labs(title = "Boxplot de Page total likes (Train)", y = "Category")
 
 ```
 
