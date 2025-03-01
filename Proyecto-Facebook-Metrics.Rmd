@@ -779,5 +779,14 @@ Resultados + Las observaciones que superan este umbral son:1, 11, 70, 95, 115, 1
 + Al igual que en la Distancia de Cook, la observación 205 es la que presenta el valor más alto, lo que confirma su fuerte impacto en la estimación del modelo.
 
 # Regresión lineal simple
+like
 
 # Regresión lineal múltiple
+todas
+
+
+#Modelo explicativo 
+Todas menos share, comment y like
+
+# Modelo predictivo
+con share, comment y like
