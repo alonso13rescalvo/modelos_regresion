@@ -493,7 +493,16 @@ tabla_anova <- anova(modelo)
 cat("\nTabla ANOVA:\n")
 print(tabla_anova)
 ```
+Suma de Cuadrados (Sum Sq):
+  + La variabilidad explicada por la variable "like" en el modelo es 13555096, lo que representa una proporción significativa de la variabilidad total en "Total Interactions".
+  + La variabilidad residual es de 108599, lo que sugiere que la mayor parte de la variabilidad en las interacciones totales es explicada por la variable "like".
 
+Valor F:
+  + El estadístico F = 30580 indica cuántas veces la variabilidad explicada por el modelo es mayor que la variabilidad no explicada. Un valor F tan alto sugiere que el modelo es altamente significativo.
+
+Significancia del Modelo (p-valor):
+  + El p-valor es < 2.2e-16, lo que es significativamente menor al umbral habitual de 0.05.
+  + Esto indica que existe una relación estadísticamente significativa entre "like" y "Total Interactions", descartando la posibilidad de que la relación observada sea producto del azar.
 
 
 **4: Estudiar los residuos**
@@ -514,6 +523,10 @@ plot(valores_ajustados, residuos,
 abline(h = 0, col = "red", lwd = 2)
 ```
 
+Este gráfico muestra la relación entre los residuos y los valores ajustados por el modelo. Se observa que la dispersión de los puntos no es completamente homogénea, ya que hay una mayor concentración en los valores bajos y una mayor variabilidad en los valores altos. Esto sugiere la posible presencia de heterocedasticidad (varianza no constante de los residuos), lo que podría afectar la validez de las inferencias realizadas a partir del modelo.
+
+
+
 
 
 Histograma de los residuos
@@ -526,6 +539,8 @@ hist(residuos,
      col = "lightblue", border = "black")
 ```
 
+El histograma permite analizar la distribución de los residuos. En este caso, la distribución no es completamente simétrica ni normal, pues presenta cierta asimetría y una posible concentración alrededor de cero. Esto indica que los errores no siguen una distribución normal.
+
 
 
 QQ-Plot de residuos
@@ -535,6 +550,9 @@ QQ-Plot de residuos
 qqnorm(residuos, main = "QQ-Plot de los Residuos")
 qqline(residuos, col = "red", lwd = 2)
 ```
+
+
+El gráfico de QQ-Plot compara los cuantiles de los residuos con los cuantiles de una distribución normal teórica. Se observa que los puntos no siguen completamente la línea roja, especialmente en los extremos, lo que indica la presencia de colas más pesadas de lo esperado bajo una distribución normal. Esto confirma la posible desviación de la normalidad en los residuos.
 
 
 
@@ -547,6 +565,12 @@ cat("Prueba de Shapiro-Wilk para normalidad de los residuos:\n")
 print(shapiro_test)
 ```
 
+La prueba de Shapiro-Wilk fue aplicada a los residuos del modelo para evaluar si siguen una distribución normal. Los resultados obtenidos son:
+
+  + Estadístico W = 0.78432
+  + p-valor < 2.2e-16
+  
+Dado que el p-valor es significativamente menor a 0.05, se rechaza la hipótesis nula de normalidad. Esto confirma que los residuos no siguen una distribución normal, lo que puede afectar la validez de los intervalos de confianza y las pruebas de hipótesis del modelo.
 
 
 Gráfico de residuos vs. una variable predictora (ejemplo: Page total likes)
@@ -561,6 +585,8 @@ plot(train_clean$like, residuos,
 abline(h = 0, col = "red", lwd = 2)
 ```
 
+
+Este gráfico permite evaluar la relación entre los residuos y la variable predictora "Like". Se observa que los residuos no están distribuidos aleatoriamente, sino que presentan un patrón en forma de abanico, lo que nuevamente sugiere heterocedasticidad. La varianza de los residuos parece aumentar a medida que crecen los valores de "Like", lo que podría indicar que la relación entre las variables no es completamente lineal o que existe una influencia de valores atípicos.
 
 
 **5: Diagnóstico del modelo**
