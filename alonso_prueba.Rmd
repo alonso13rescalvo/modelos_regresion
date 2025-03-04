@@ -276,5 +276,72 @@ ggplot(train, aes(x = train$`Total Interactions`, y = train$like)) +
 ```
 
 
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Crear el gráfico de dispersión con la línea de regresión
+ggplot(train, aes(x = train$`Total Interactions`, y = train$`Lifetime Post Total Impressions`)) +
+  geom_point(color = "blue", alpha = 0.6) +  # Puntos de datos reales
+  geom_smooth(method = "lm", color = "red") +  # Línea de regresión basada en el modelo
+  labs(title = "Relación entre Total Interactions y Likes",
+       x = "Total Interactions",
+       y = "Life time post total impressions") +
+  theme_minimal()
+
+```
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Ajuste del modelo polinómico de grado 2
+modelo_polinomico <- lm(comment ~ poly(`Total Interactions`, 2), data = train)
+
+# Resumen del modelo
+summary(modelo_polinomico)
+
+# Diagnóstico del modelo
+plot(modelo_polinomico)
+
+# Visualización de la regresión polinómica
+# Ordenamos los valores de X para que la curva de la predicción sea suave
+x_ordenado <- train[order(train$`Total Interactions`), ]  # Ordenar datos
+predicciones <- predict(modelo_polinomico, newdata = x_ordenado)  # Predicciones ordenadas
+
+# Gráfico base con puntos
+plot(train$`Total Interactions`, train$comment, 
+     main = "Regresión Polinómica de Segundo Grado",
+     pch = 19, col = "blue", xlab = "Total Interactions", ylab = "Comment")
+
+# Agregar la línea de la regresión
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
+
+# Regresion spline
+```{r}
+# Cargar librería para splines
+library(splines)
+
+# Ajuste del modelo spline con tus datos reales
+modelo_spline <- lm(train$`Lifetime Post Total Impressions` ~ bs(`Total Interactions`, knots = c(30, 60, 80)), data = train)
+
+# Ordenar los datos por 'Total Interactions' para graficar correctamente
+x_ordenado <- train[order(train$`Total Interactions`), ]
+
+# Predicciones basadas en el modelo ajustado
+predicciones <- predict(modelo_spline, newdata = x_ordenado)
+
+# Gráfico de dispersión con la curva spline
+plot(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, 
+     main = "Regresión Spline", 
+     pch = 19, col = "blue", 
+     xlab = "Total Interactions", ylab = "Life time post tootal impressions")
+
+# Agregar la línea de regresión spline
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
 
 
