@@ -594,7 +594,16 @@ print(breusch_pagan)
 
 ```
 
+La prueba de Breusch-Pagan se utiliza para evaluar si los residuos del modelo tienen varianza constante (homocedasticidad) o si, por el contrario, presentan heterocedasticidad (varianza no constante).
 
+Resultados obtenidos:
+  + Estadístico BP = 128.12
+  + Grados de libertad (df) = 1
+  + p-valor < 2.2e-16
+Interpretación:
+
+  + El p-valor es extremadamente pequeño (< 0.05), lo que indica que se rechaza la hipótesis nula de homocedasticidad.
+  + Esto significa que existe heterocedasticidad en los residuos, es decir, la varianza de los errores no es constante a lo largo de los valores de la variable predictora.
 
 Prueba de autocorrelación (Durbin-Watson)
 
@@ -606,7 +615,17 @@ cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
 print(durbin_watson)
 ```
 
+La prueba de Durbin-Watson se emplea para detectar la presencia de autocorrelación en los residuos, es decir, si los errores están correlacionados en función del orden de las observaciones.
 
+Resultados obtenidos:
+
+  + Estadístico DW = 1.7823
+  + p-valor = 0.04265
+  + Hipótesis alternativa: Existe autocorrelación positiva en los residuos.
+Interpretación:
+
+El estadístico Durbin-Watson cercano a 2 indica que no hay una autocorrelación fuerte. Sin embargo, el p-valor de 0.04265 es menor a 0.05, lo que sugiere la presencia de una autocorrelación positiva débil en los residuos.
+La autocorrelación de los errores puede indicar que hay una relación no capturada en el modelo o que las observaciones no son completamente independientes.
 
 **Paso 6: Leverage y observaciones influyentes**
 
@@ -631,6 +650,12 @@ print(leverage_high)
 
 
 ```
+
+
+Se calculó el umbral para identificar leverage alto como: 0.016
+e identificaron 14 observaciones que superan el umbral de leverage alto. Estas observaciones son: 1,18,70,84,95,115,146,170,177,183,191,205,219,240
+En el gráfico de leverage, estas observaciones están señalizadas con el núemro en rojo.
+
 
 ```{r}
 # Gráfico de leverage
@@ -674,6 +699,16 @@ print(head(dffits_values, 10))
 cat("\nObservaciones con DFFITS alto (> ", dffits_threshold, "):\n")
 print(which(abs(dffits_values) > dffits_threshold))
 ```
+
+Observaciones con Distancia de Cook alta: 1,11,30,31,67,70,95,115,128,183,191,204,205,209,219
+Estas observaciones tienen una influencia significativa en el modelo. En el gráfico, las observaciones destacadas en rojo superan el umbral y podrían estar afectando los coeficientes de la regresión.
+
+bservaciones con DFFITS alto: 1,11,30,31,67,70,95,115,128,183,191,204,205,209,219
+Estas observaciones tienen un gran impacto en la predicción individual de la variable dependiente. En el gráfico, las observaciones con valores extremos de DFFITS están resaltadas en rojo.
+
+
+Los valores de DFBETAS indican que algunas observaciones tienen un impacto significativo en los coeficientes del modelo. En particular:la observación 1 tiene un DFBETAS alto en el intercepto y la variable "like", lo que indica que al removerla, los coeficientes cambiarían notablemente.
+
 
 Graficar Distancia de Cook
 
