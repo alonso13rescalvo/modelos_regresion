@@ -499,7 +499,7 @@ Esto nos permite entender la relación entre Page total likes y Total Interactio
 
 ```{r}
 # Ajustar el modelo de regresión lineal
-modelo <- lm(`Total Interactions` ~ `Page total likes`, data = train_clean)
+modelo <- lm(`Total Interactions` ~ `like`, data = train_clean)
 
 # Obtener estimadores de los parámetros y errores estándar
 estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
@@ -507,6 +507,7 @@ estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
 # Imprimir los resultados
 cat("Estimadores para los parámetros del modelo:\n")
 print(estimadores)
+
 ```
 
 1.  Interpretación de los coeficientes
