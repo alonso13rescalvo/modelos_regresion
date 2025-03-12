@@ -179,11 +179,11 @@ library(ggplot2)
 
 # Histograma de "Page total likes" en el conjunto de entrenamiento
 ggplot(train, aes(x = train$`Page total likes`)) + 
-  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
   labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
 
-
+### PONER MENOS BINS
 ```
 
 Al observar el histograma, se aprecia que la distribución de los likes no es completamente uniforme, sino que tiende a agruparse en los valores más elevados.
