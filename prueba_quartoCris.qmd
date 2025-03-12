@@ -170,11 +170,11 @@ library(ggplot2)
 
 # Histograma de "Page total likes" en el conjunto de entrenamiento
 ggplot(train, aes(x = train$`Page total likes`)) + 
-  geom_histogram(binwidth = 500, fill = "lightblue", color = "black", alpha = 0.7) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
   labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
 
-
+### PONER MENOS BINS
 ```
 
 Al observar el histograma, se aprecia que la distribución de los likes no es completamente uniforme, sino que tiende a agruparse en los valores más elevados.
@@ -235,6 +235,23 @@ table(train$Type)
 
 ```
 
+
+```{r}
+library(ggplot2)
+
+# Crear un gráfico de barras
+ggplot(train, aes(x = Type)) + 
+  geom_bar() +
+  labs(title = "Gráfico de Barras de la Variable 'type'", 
+       x = "Tipo", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+
+
 ```{r}
 #  Type (Gráfico de cajas ya que es una variable categórica)
 ggplot(train, aes(x = Type, y = `Total Interactions`, fill = Type)) +
@@ -266,6 +283,19 @@ summary(train$Category)
 table(train$Category)
 
 ```
+Factor: {1=action, 2=product, 3=inspiration }
+
+```{r}
+# Crear un gráfico de barras
+ggplot(train, aes(x = Category)) + 
+  geom_bar() +
+  labs(title = "Gráfico de Barras de la Variable 'type'", 
+       x = "Tipo", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+```
+
 
 ```{r}
 
@@ -318,6 +348,23 @@ table(train$`Post Month`)
 
 ```
 
+
+```{r}
+# Asegúrate de tener cargada la librería ggplot2
+library(ggplot2)
+
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Month`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de 'Post Month'", 
+       x = "Post Month", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+
 ```{r}
 #  Post Month (Gráfico de cajas)
 ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`, fill = as.factor(`Post Month`))) +
@@ -348,6 +395,24 @@ table(train$`Post Weekday`)
 
 ```
 
+
+```{r}
+# Asegúrate de tener cargada la librería ggplot2
+library(ggplot2)
+
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Weekday`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de `Post Weekday`", 
+       x = "Post Weekday", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+
+
 ```{r}
 #  Post Weekday (Gráfico de cajas)
 ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`, fill = as.factor(`Post Weekday`))) +
@@ -376,6 +441,22 @@ knitr::kable(tabla_frecuencias_weekday, digits = 4)
 summary(train$`Post Hour`)
 table(train$`Post Hour`)
 ```
+
+```{r}
+# Asegúrate de tener cargada la librería ggplot2
+library(ggplot2)
+
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Hour`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de `Post Hour`", 
+       x = "Post Hour", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
 
 ```{r}
 #  Post Hour (Gráfico de cajas)
@@ -421,7 +502,9 @@ knitr::kable(tabla_frecuencias_hour, digits = 4)
 
 **Share**
 
-# Regresión lineal pruebas
+# Regresión lineal 
+
+Tras observar las variables hemos optado por hacer la regresión lineal simple enfrentando Total Interactions (nuestro target) con la variable Likes.
 
 ```{r}
 # Eliminar filas con valores faltantes en cualquier columna
@@ -703,7 +786,7 @@ print(which(abs(dffits_values) > dffits_threshold))
 Observaciones con Distancia de Cook alta: 1,11,30,31,67,70,95,115,128,183,191,204,205,209,219
 Estas observaciones tienen una influencia significativa en el modelo. En el gráfico, las observaciones destacadas en rojo superan el umbral y podrían estar afectando los coeficientes de la regresión.
 
-bservaciones con DFFITS alto: 1,11,30,31,67,70,95,115,128,183,191,204,205,209,219
+Observaciones con DFFITS alto: 1,11,30,31,67,70,95,115,128,183,191,204,205,209,219
 Estas observaciones tienen un gran impacto en la predicción individual de la variable dependiente. En el gráfico, las observaciones con valores extremos de DFFITS están resaltadas en rojo.
 
 
@@ -743,16 +826,7 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 ```
 
 
-
-# Regresión lineal simple
-like
-
 # Regresión lineal múltiple
 todas
 
 
-#Modelo explicativo 
-Todas menos share, comment y like
-
-# Modelo predictivo
-con share, comment y like
