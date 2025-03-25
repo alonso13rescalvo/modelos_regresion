@@ -716,8 +716,55 @@ todas
 
 # Métodos de selección de variables y problemas de regularización 
 
-## LASSO (Cristina)
+
 ## Ridge (Lucía)
+
+
+
+
+## LASSO (Cristina)
+
+```{r}
+library(glmnet)
+
+# Eliminar filas NA y definir variable dependiente e independientes
+train_clean <- na.omit(train)
+
+# Definir Y (variable objetivo) como "Total Interactions"
+Y <- train_clean$`Total Interactions`
+
+# Definir X (matriz de variables predictoras) excluyendo la variable objetivo
+X <- train_clean[, !names(train_clean) %in% c("Total Interactions")]
+
+# Eliminar todas las variables categóricas de X
+X <- X[sapply(X, is.numeric)]
+
+# Convertir X a matriz numérica para glmnet
+X <- as.matrix(X)
+
+```
+
+
+
+```{r}
+# Ajustar el modelo Lasso
+modelo_lasso <- glmnet(X, Y, alpha = 1)
+
+# Seleccionar el mejor lambda usando validación cruzada
+cv_lasso <- cv.glmnet(X, Y, alpha = 1)
+lambda_optimo <- cv_lasso$lambda.min  # Mejor valor de lambda
+
+# Ajustar modelo final con lambda óptimo
+modelo_lasso_final <- glmnet(X, Y, alpha = 1, lambda = lambda_optimo)
+
+# Mostrar coeficientes del modelo
+coeficientes_lasso <- coef(modelo_lasso_final)
+print(coeficientes_lasso)
+
+```
+
+
+
 ## Justificar las elecciones y comparar modelos
 
 
