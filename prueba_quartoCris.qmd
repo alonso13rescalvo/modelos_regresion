@@ -724,6 +724,8 @@ todas
 
 ## LASSO (Cristina)
 
+A la hora de realizar LASSO hemos quitado las variables "comment", "like" y "share" (aparte del target), ya que nuestro target es el resultado de la suma de estas tres variables.
+
 ```{r}
 library(glmnet)
 
@@ -734,7 +736,7 @@ train_clean <- na.omit(train)
 Y <- train_clean$`Total Interactions`
 
 # Definir X (matriz de variables predictoras) excluyendo la variable objetivo
-X <- train_clean[, !names(train_clean) %in% c("Total Interactions")]
+X <- train_clean[, !names(train_clean) %in% c("Total Interactions", "comment", "like", "share")]
 
 # Eliminar todas las variables categóricas de X
 X <- X[sapply(X, is.numeric)]
@@ -762,10 +764,18 @@ coeficientes_lasso <- coef(modelo_lasso_final)
 print(coeficientes_lasso)
 
 ```
++ Las variables "Paid" y "Lifetime Engaged Users" tienen un impacto positivo fuerte y significativo en las interacciones totales.
 
++ Variables como "Page total likes" y "Lifetime Post Total Reach" tienen un impacto muy pequeño, lo que sugiere que no son tan relevantes para predecir las interacciones.
+
++ Las variables como "Post Month", "Lifetime Post Consumers" y "Lifetime Post reach by people who like your Page" tienen efectos negativos sobre las interacciones totales.
+
++ Lasso ha reducido el número de variables que influyen en el modelo, eliminando las que no aportan valor predictivo.
 
 
 ## Justificar las elecciones y comparar modelos
+
+
 
 
 # Modelos no lineales (Alonso)
