@@ -958,7 +958,59 @@ La distancia de Cook permite identificar observaciones que tienen una gran influ
 # Métodos de selección de variables y problemas de regularización 
 
 ## LASSO (Cristina)
+
+A la hora de realizar LASSO hemos quitado las variables "comment", "like" y "share" (aparte del target), ya que nuestro target es el resultado de la suma de estas tres variables.
+
+```{r}
+library(glmnet)
+
+# Eliminar filas NA y definir variable dependiente e independientes
+train_clean <- na.omit(train)
+
+# Definir Y (variable objetivo) como "Total Interactions"
+Y <- train_clean$`Total Interactions`
+
+# Definir X (matriz de variables predictoras) excluyendo la variable objetivo
+X <- train_clean[, !names(train_clean) %in% c("Total Interactions", "comment", "like", "share")]
+
+# Eliminar todas las variables categóricas de X
+X <- X[sapply(X, is.numeric)]
+
+# Convertir X a matriz numérica para glmnet
+X <- as.matrix(X)
+
+```
+
+
+
+```{r}
+# Ajustar el modelo Lasso
+modelo_lasso <- glmnet(X, Y, alpha = 1)
+
+# Seleccionar el mejor lambda usando validación cruzada
+cv_lasso <- cv.glmnet(X, Y, alpha = 1)
+lambda_optimo <- cv_lasso$lambda.min  # Mejor valor de lambda
+
+# Ajustar modelo final con lambda óptimo
+modelo_lasso_final <- glmnet(X, Y, alpha = 1, lambda = lambda_optimo)
+
+# Mostrar coeficientes del modelo
+coeficientes_lasso <- coef(modelo_lasso_final)
+print(coeficientes_lasso)
+
+```
++ Las variables "Paid" y "Lifetime Engaged Users" tienen un impacto positivo fuerte y significativo en las interacciones totales.
+
++ Variables como "Page total likes" y "Lifetime Post Total Reach" tienen un impacto muy pequeño, lo que sugiere que no son tan relevantes para predecir las interacciones.
+
++ Las variables como "Post Month", "Lifetime Post Consumers" y "Lifetime Post reach by people who like your Page" tienen efectos negativos sobre las interacciones totales.
+
++ Lasso ha reducido el número de variables que influyen en el modelo, eliminando las que no aportan valor predictivo.
+
+
 ## Ridge (Lucía)
+
+
 ## Justificar las elecciones y comparar modelos
 
 
