@@ -763,7 +763,8 @@ La correlación es alta y positiva. Hay una relación fuerte entre las interacci
 
 Tras observar las variables hemos optado por hacer la regresión lineal simple enfrentando Total Interactions (nuestro target) con la variable Likes y luego con la variable'Lifetime Post Impressions by people who have liked your Page'
 
-### Regresión lineal simple con likes (Cristina)
+### Regresión lineal simple con likes 
+(Cristina)
 **1: Ajustar el modelo de regresión lineal**
 
 Ajustamos el modelo: Estamos ajustando un modelo de regresión lineal simple donde la variable dependiente es Total Interactions y la variable predictora es Page total likes. Ajustamos el modelo y calculamos los coeficientes de la recta de regresión.
@@ -1041,7 +1042,8 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 
 ```
 
-### Regresión lineal simple con Lifetime Post Impressions by people who have liked your Page (Cristina)
+### Regresión lineal simple con Lifetime Post Impressions by people who have liked your Page 
+(Cristina)
 
 **1: Ajustar el modelo de regresión lineal**
 ```{r}
@@ -1306,7 +1308,8 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 
 
 
-## Regresión lineal múltiple (Lucía)
+## Regresión lineal múltiple 
+(Lucía)
 
 
 ### Ajuste del modelo de Regresión Lineal Múltiple
@@ -1450,8 +1453,10 @@ La distancia de Cook permite identificar observaciones que tienen una gran influ
 
 # Métodos de selección de variables y problemas de regularización 
 
+A la hora de realizar la selección de variables hemos quitado las variables "comment", "like" y "share", ya que nuestro target es el resultado de la suma de estas tres variables.
 
-## Ridge (Lucía)
+## Ridge 
+(Lucía)
 
 Ridge Regression es un método de regularización que aplica una penalización proporcional al cuadrado de los coeficientes, lo que permite manejar problemas de multicolinealidad pero no conduce a la eliminación completa de variables.
 
@@ -1463,20 +1468,12 @@ train_clean <- na.omit(train)
 # Variable objetivo
 Y <- train_clean$`Total Interactions` 
 
-
-#----------------------------------
-
 # Primero, excluimos las variables "comment", "like" y "share"
 train_clean_filtered <- train_clean[, !names(train_clean) %in% c("comment", "like", "share")]
 
 # Realizamos el one-hot encoding para las variables categóricas
 # Convertimos variables categóricas en dummies (one-hot encoding)
 X1 <- model.matrix(`Total Interactions` ~ ., data = train_clean_filtered)[, -1]  # Quitar la intersección
-
-
-
-#-----------------------------------
-
 
 # Ajustar modelo Ridge (alpha = 0 para Ridge)
 modelo_ridge <- glmnet(X1, Y, alpha = 0)
@@ -1520,10 +1517,10 @@ Vemos que OLS no genera coeficientes para muchas variables, lo que indica que el
 
 
 
-## LASSO (Cristina)
+## LASSO 
+(Cristina)
 
-A la hora de realizar LASSO hemos quitado las variables "comment", "like" y "share" (aparte del target), ya que nuestro target es el resultado de la suma de estas tres variables.
-
+El modelo Lasso (Least Absolute Shrinkage and Selection Operator) es una técnica de regresión que introduce penalización sobre la magnitud de los coeficientes de los predictores. Esto tiene como efecto reducir algunos coeficientes a cero, logrando una selección automática de variables y evitando problemas de sobreajuste.
 
 ```{r}
 # Ajustar el modelo Lasso
@@ -1540,15 +1537,30 @@ modelo_lasso_final <- glmnet(X1, Y, alpha = 1, lambda = lambda_optimo)
 coeficientes_lasso <- coef(modelo_lasso_final)
 print(coeficientes_lasso)
 
+
 ```
-+ Las variables "Paid" y "Lifetime Engaged Users" tienen un impacto positivo fuerte y significativo en las interacciones totales.
+El parámetro lambda controla la fuerza de la penalización en el modelo. Aquí, utilizamos la validación cruzada para encontrar el valor óptimo de λ, el cual minimiza el error de validación. El valor óptimo encontrado es $λ=$`r lambda_optimo`, que se usó para ajustar el modelo final.  
 
-+ Variables como "Page total likes" y "Lifetime Post Total Reach" tienen un impacto muy pequeño, lo que sugiere que no son tan relevantes para predecir las interacciones.
+La salida muestra los coeficientes estimados por el modelo Lasso ajustado. Las variables con coeficientes cero (.) fueron eliminadas del modelo por el efecto de la penalización de Lasso, mientras que aquellas que mantienen un valor distinto de cero son las variables seleccionadas como más relevantes para explicar la variable dependiente Y.
 
-+ Las variables como "Post Month", "Lifetime Post Consumers" y "Lifetime Post reach by people who like your Page" tienen efectos negativos sobre las interacciones totales.
+Variables seleccionadas (con coeficientes distintos de cero):
 
-+ Lasso ha reducido el número de variables que influyen en el modelo, eliminando las que no aportan valor predictivo.
+  + TypePhoto: -14.33 → Publicar fotos tiene un impacto negativo en la variable objetivo.
+  + TypeStatus: -45.39 → Publicar solo un estado reduce considerablemente la respuesta esperada.
+  + TypeVideo: +16.24 → Publicar videos tiene un impacto positivo significativo.
+  + Category2 y Category3: +25.63 y +24.36 → Estas categorías específicas también contribuyen positivamente.
+  + Paid: +8.92 → Realizar publicaciones pagadas mejora la respuesta esperada.
+  + Lifetime Engaged Users: +1.16 → Incrementos en esta métrica aumentan la respuesta del modelo.
+  + Lifetime Post Impressions by people who have liked your Page: +0.000578 → Pequeño impacto positivo.
+  + Lifetime Post reach by people who like your Page: +0.000314 → Contribución positiva, aunque mínima.
 
+  + Lifetime Post Total Reach y Lifetime Post Total Impressions: -0.0013 y +0.00019 respectivamente, mostrando ligeros efectos opuestos.
+
+  + Post Month: -1.20 → Publicaciones en ciertos meses pueden tener un leve impacto negativo.
+  
+  Resumidamente, nos quedamos con: Type, Category, Paid, Lifetime Engaged Users, Lifetime Post Impressions by people who have liked your Page, Lifetime Post reach by people who like your Page y Post Month.
+
+Variables como Post Weekday, Post Hour, Lifetime Post Consumptions, y Lifetime People who have liked your Page and engaged with your post han sido eliminadas por su baja relevancia predictiva según el modelo Lasso.
 
 ## Elastic Net (Lucía)
 La regresión Elastic Net es una técnica de regularización que combina las propiedades de Ridge y Lasso. Permite controlar simultáneamente la reducción de la magnitud de los coeficientes y la eliminación de variables irrelevantes.
@@ -1867,5 +1879,4 @@ El modelo spline, aunque sea  flexible, no funciona bien en este nuestra caso.
 
 
   
-
 
