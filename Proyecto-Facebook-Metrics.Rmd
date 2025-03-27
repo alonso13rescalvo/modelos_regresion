@@ -1956,4 +1956,6 @@ El modelo spline, aunque sea  flexible, no funciona bien en este nuestra caso.
 ## necesidad de modelos no lineales
 ## transformaciones de variables
 ## Evaluar mejoras con métricas
+  
+
 
