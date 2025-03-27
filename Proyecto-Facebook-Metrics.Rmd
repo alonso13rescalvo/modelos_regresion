@@ -1337,6 +1337,25 @@ cat("\nObservaciones con DFFITS alto (> ", dffits_threshold, "):\n")
 print(which(abs(dffits_values) > dffits_threshold))
 
 ```
+**La Distancia de Cook** mide la influencia de cada observación en los coeficientes del modelo. Se calculó este valor para todas las observaciones y se identificaron aquellas que superan el umbral de 0.016 (calculado como 4/n, donde n es el número total de observaciones).
+
+  + Primeras 10 observaciones: Los valores de la Distancia de Cook muestran que, en general, la mayoría de los puntos tienen una influencia moderada.
+
+  + Observaciones influyentes: Se identificaron las siguientes observaciones con una Distancia de Cook alta: 1, 70, 95, 115, 119, 146, 183 y 205. Estas observaciones podrían estar afectando de manera significativa los coeficientes del modelo y deberían ser revisadas más a fondo.
+
+
+
+El **DFBETAS** mide cuánto cambia un coeficiente si se elimina una observación específica. Se calcularon los valores para el intercepto y la variable predictora.
+  + En las primeras 10 observaciones, los valores de DFBETAS varían en torno a 0, lo que sugiere que estas observaciones no afectan drásticamente los coeficientes.
+  + Sin embargo, algunas observaciones tienen valores de DFBETAS relativamente altos, lo que indica que podrían estar afectando la estimación del coeficiente de la variable predictora.
+
+
+El **DFFITS** mide cuánto cambia el valor ajustado de una observación cuando esta se elimina del modelo. Se calcularon los valores y se identificaron observaciones con valores altos en comparación con el umbral de 0.1789 (calculado como dos por la raiz de p entre n, donde p es el número de parámetros en el modelo).
+  + Primeras 10 observaciones: En general, los valores son bajos, lo que indica una influencia moderada en los valores ajustados.
+
+  + Observaciones con DFFITS alto: Se identificaron las siguientes observaciones con valores de DFFITS superiores al umbral: 1, 70, 95, 115, 119, 146, 183, 191 y 205. Estas observaciones podrían estar afectando de manera desproporcionada las predicciones del modelo.
+
+
 
 Gráfico de Distancia de Cook:
 ```{r}
@@ -1350,6 +1369,8 @@ text(which(cooks_distance > cooks_threshold), cooks_distance[cooks_distance > co
      labels = which(cooks_distance > cooks_threshold), pos = 3, col = "red")
 
 ```
+
+
 
 Gráfico de DFFITS:
 ```{r}
