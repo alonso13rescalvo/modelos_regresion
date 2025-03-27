@@ -221,7 +221,8 @@ ggplot(train, aes(y = `Total Interactions`)) +
 
 ### Variables
 
-**Page total likes** (Cristina)
+#### Page total likes
+ (Cristina)
 Esta variable (Total de "me gusta" de la página) esvel número de personas a las que les ha gustado la página de la empresa.
 
 ```{r}
@@ -266,13 +267,14 @@ plot(train$`Page total likes`, train$`Total Interactions`,
      col="red", pch=16)
 ```
 
-En cuanto a la relación entre Page total likes y Total Interactions, la correlación obtenida es baja o moderada, lo que indica que el número de likes en una página no determina de manera significativa el nivel de interacción de sus publicaciones. El diagrama de dispersión confirma esta observación, ya que no se percibe una tendencia clara entre ambas variables. Hay casos en los que páginas con un menor número de likes generan una gran cantidad de interacciones, mientras que otras con más likes no necesariamente logran el mismo nivel de engagement.
+En cuanto a la relación entre Page total likes y Total Interactions, la correlación obtenida es muy baja y positiva, lo que indica que el número de likes en una página no determina de manera significativa el nivel de interacción de sus publicaciones. El diagrama de dispersión confirma esta observación, ya que no se percibe una tendencia clara entre ambas variables. Hay casos en los que páginas con un menor número de likes generan una gran cantidad de interacciones, mientras que otras con más likes no necesariamente logran el mismo nivel de engagement.
 
 Esto sugiere que la cantidad de likes en una página no es el único factor que influye en la interacción del público. Es probable que variables como el tipo de publicación, la hora en la que se publica o el contenido del mensaje tengan un impacto mayor en el número de interacciones.
 
 
 
-**Type** (Cristina)
+#### Type
+(Cristina)
 En cuanto a ala varible Tipo, se trata del tipo de contenido (Enlace, Foto, Estado, Vídeo).
 
 ```{r}
@@ -324,7 +326,8 @@ Las publicaciones de tipo Link parecen ser las que generan menos interacciones, 
 
 La mediana de interacciones es similar entre Photo, Status, y Video, pero las fotos destacan por sus outliers hacia arriba.
 
-**Category** (Cristina)
+#### Category 
+(Cristina)
 La variable categoría es la caracterización manual de contenido: acción (ofertas especiales y concursos), producto (publicidad directa, contenido explícito relacionado con la marca) e inspiración (contenido no explícito relacionado con la marca).
 ```{r}
 summary(train$Category)
@@ -351,21 +354,18 @@ ggplot(train, aes(x = Category, fill = Category)) +
 ```
 
 ```{r}
-
-# Crear un boxplot para enfrentar la variable categórica con el target
-ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`)) +
-  geom_boxplot(fill = "skyblue", color = "darkblue") +
-  labs(title = "Boxplot: Category vs Total Interactions",
-       x = "Category",
-       y = "Total Interactions") +
-  theme_minimal()
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$Category, use="complete.obs")  # Correlación
+plot(train$Category, train$`Total Interactions`, main="Category vs Total Interactions",
+     xlab="Category", ylab="Total Interactions", col="purple", pch=16)
 ```
+La correlación es baja y positiva. Hay una relación débil entre las interacciones y la categoría, pero no es una correlación fuerte.
 
 
 
 
-
-**Post Month** (Cristina)
+#### Post Month 
+(Cristina)
 
 La variable "Mes del posteo" se trata del mes en que se publicó el post (enero, febrero, marzo,…, diciembre).
 
@@ -384,16 +384,14 @@ ggplot(train, aes(x = factor(`Post Month`))) +
        y = "Frecuencia") +
   theme_minimal()
 
-
 ```
+
+
 ```{r}
-# Crear un boxplot para enfrentar la variable categórica con el target
-ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`)) +
-  geom_boxplot(fill = "skyblue", color = "darkblue") +
-  labs(title = "Boxplot: Post Month vs Total Interactions",
-       x = "Post Month",
-       y = "Total Interactions") +
-  theme_minimal()
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Post Month`, use="complete.obs")  # Correlación
+plot(train$`Post Month`, train$`Total Interactions`, main="`Post Month` vs Total Interactions",
+     xlab="`Post Month`", ylab="Total Interactions", col="coral1", pch=16)
 ```
 
 
@@ -407,8 +405,11 @@ No parece haber una tendencia clara en la estacionalidad de las interacciones a 
 
 Algunos meses tienen más publicaciones virales (con valores extremos), pero la mayoría de los meses tienen una distribución de interacciones relativamente baja y estable.
 
+A pesar de todo, la correlación es muy baja y negativa. No hay una relación significativa entre las interacciones y el mes en que se publicó, y si existe alguna, es muy débil.
 
-**Post Weekday** (Cristina)
+
+#### Post Weekday 
+(Cristina)
 Esta variable trata del día de la semana en que se publicó la entrada (domingo, lunes, …, sábado).
 ```{r}
 summary(train$`Post Weekday`)
@@ -429,20 +430,18 @@ ggplot(train, aes(x = factor(`Post Weekday`))) +
 ```
 
 ```{r}
-# Crear un boxplot para enfrentar la variable categórica con el target
-ggplot(train, aes(x = as.factor(`Post Weekday`), y = `Total Interactions`)) +
-  geom_boxplot(fill = "skyblue", color = "darkblue") +
-  labs(title = "Boxplot: Post Weekday vs Total Interactions",
-       x = "Post Weekday",
-       y = "Total Interactions") +
-  theme_minimal()
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Post Weekday`, use="complete.obs")  # Correlación
+plot(train$`Post Weekday`, train$`Total Interactions`, main="`Post Weekday` vs Total Interactions",
+     xlab="`Post Weekday`", ylab="Total Interactions", col="#E066FF", pch=16)
 ```
 
-No parece haber una tendencia clara en la estacionalidad de las interacciones a lo largo de la semana.
+No parece haber una relación importante entre el día de la semana de la publicación y las interacciones. Esto indica que el día de la semana no tiene un impacto notable en la cantidad de interacciones en las publicaciones.
 
 
 
-**Post Hour** (Cristina)
+#### Post Hour
+(Cristina)
 
 Esta variable es la hora de publicación de la publicación (0, 1, 2, 3, 4, …, 23)
 
@@ -464,30 +463,29 @@ ggplot(train, aes(x = factor(`Post Hour`))) +
 ```
 
 ```{r}
-# Crear un boxplot para enfrentar la variable categórica con el target
-ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`)) +
-  geom_boxplot(fill = "skyblue", color = "darkblue") +
-  labs(title = "Boxplot: Post Hour vs Total Interactions",
-       x = "Post Hour",
-       y = "Total Interactions") +
-  theme_minimal()
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Post Hour`, use="complete.obs")  # Correlación
+plot(train$`Post Hour`, train$`Total Interactions`, main="`Post Hour` vs Total Interactions",
+     xlab="`Post Hour`", ylab="Total Interactions", col="#C0FF3E", pch=16)
 ```
 Los resultados muestran que las publicaciones realizadas entre las 5 AM y 12 PM tienden a generar más interacciones en promedio. En particular, las publicaciones a las 5 AM y 12 PM presentan las medianas más altas, indicando una mayor participación de los usuarios.
 
 Además, se identificaron varios outliers (valores atípicos) en la madrugada (especialmente entre las 2 AM y 5 AM), lo que sugiere que algunas publicaciones pueden volverse virales, aunque no sea la norma. Por otro lado, las publicaciones realizadas después de las 5 PM muestran una menor cantidad de interacciones y una variabilidad reducida.
 
+A pesar de todo, la correlación es muy baja y negativa. No hay una relación importante entre las interacciones y la hora de la publicación.
 
 
-
-**Paid**(Cristina)
+#### Paid
 Esta varible trata de si la empresa pagó a Facebook por publicidad (sí=0, no=1).
 ```{r}
+# Resumen (Cristina)
 summary(train$Paid)
 table(train$Paid)
 
 ```
 
 ```{r}
+#Histograma (Cristina)
 # Crear un gráfico de barras para la variable 'Paid'
 ggplot(train, aes(x = factor(Paid))) + 
   geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
@@ -501,24 +499,23 @@ ggplot(train, aes(x = factor(Paid))) +
 
 
 ```{r}
-# Crear un boxplot para enfrentar la variable categórica con el target
-ggplot(train, aes(x = as.factor(Paid), y = `Total Interactions`)) +
-  geom_boxplot(fill = "skyblue", color = "darkblue") +
-  labs(title = "Boxplot: Paid vs Total Interactions",
-       x = "Paid",
-       y = "Total Interactions") +
-  theme_minimal()
+#enfrentamiento con el target (Lucía)
+cor(train$`Total Interactions`, train$Paid, use="complete.obs")  # Correlación
+plot(train$Paid, train$`Total Interactions`, main="Paid vs Total Interactions",
+     xlab="Paid", ylab="Total Interactions", col="purple", pch=16)
 ```
+ La correlación es baja y positiva. Hay una relación muy débil y positiva entre las interacciones y si el post fue pagado, pero no es significativa.
 
-
-**Lifetime Post Total Reach**(Cristina)
+#### Lifetime Post Total Reach
 Esta es la cantidad de personas que vieron una publicación de la página (usuarios únicos).
 ```{r}
+# Resumen (Cristina)
 summary(train$`Lifetime Post Total Reach`)
 
 ```
 
 ```{r}
+# Histograma (Cristina)
 # Histograma de `Lifetime Post Total Reach` en el conjunto de entrenamiento
 ggplot(train, aes(x = train$`Lifetime Post Total Reach`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
@@ -529,25 +526,27 @@ ggplot(train, aes(x = train$`Lifetime Post Total Reach`)) +
 
 
 ```{r}
-#enfrentamiento con el target 
+#enfrentamiento con el target (Lucía)
 cor(train$`Total Interactions`, train$`Lifetime Post Total Reach`, use="complete.obs")  # Correlación
-plot(train$`Lifetime Post Total Reach`, train$`Total Interactions`, main="`Lifetime Post Total Reach` vs Total Interactions",
-     xlab="`Lifetime Post Total Reach``", ylab="Total Interactions", col="5423", pch=16)
+plot(train$`Lifetime Post Total Reach`, train$`Total Interactions`, main="Lifetime Post Total Reach vs Total Interactions",
+     xlab="Lifetime Post Total Reach", ylab="Total Interactions", col="orange", pch=16)
+
 
 ```
-Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+ La correlación es moderada y positiva. Hay una relación moderada entre las interacciones y el alcance total de la publicación a lo largo de su vida.
 
-**Lifetime Post Total Impressions**(Cristina)
+#### Lifetime Post Total Impressions
 Las impresiones son el número de veces que se muestra una publicación de una página, independientemente de si se hace clic en ella. Es posible que se vean varias impresiones de la misma publicación. Por ejemplo, alguien podría ver una actualización de una página en la sección de noticias una vez y luego otra si un amigo la comparte.
 
 ```{r}
+# Resumen (Cristina)
 summary(train$`Lifetime Post Total Impressions`)
 
 ```
 
 
 ```{r}
-
+#Histograma (Cristina)
 ggplot(train, aes(x = train$`Lifetime Post Total Impressions`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -558,26 +557,27 @@ ggplot(train, aes(x = train$`Lifetime Post Total Impressions`)) +
 
 
 ```{r}
+#enfrentamiento con el target (Lucía)
 # Lifetime Post Total Impressions
-cor(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, use="complete.obs")  
-plot(train$`Lifetime Post Total Impressions`, train$`Total Interactions`, 
-     main="Lifetime Post Total Impressions vs Total Interactions",
-     xlab="Lifetime Post Total Impressions", ylab="Total Interactions", 
-     col="5423", pch=16)
+cor(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Total Impressions`, train$`Total Interactions`, main="Lifetime Post Total Impressions vs Total Interactions",
+     xlab="Lifetime Post Total Impressions", ylab="Total Interactions", col="brown", pch=16)
 ```
-Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+La correlación es moderada y positiva. Existe una relación moderada entre las interacciones y el total de impresiones de la publicación durante su vida.
 
 
-**Lifetime Engaged Users**(Cristina)
+#### Lifetime Engaged Users
 Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación (usuarios únicos).
 
 ```{r}
+# Resumen (Cristina)
 summary(train$`Lifetime Engaged Users`)
 ```
 
 
 
 ```{r}
+#Histograma (Cristina)
 ggplot(train, aes(x = train$`Lifetime Engaged Users`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -587,28 +587,28 @@ ggplot(train, aes(x = train$`Lifetime Engaged Users`)) +
 
 
 ```{r}
+#enfrentamiento con el target (Lucía)
 # Lifetime Engaged Users
-cor(train$`Total Interactions`, train$`Lifetime Engaged Users`, use="complete.obs")  
-plot(train$`Lifetime Engaged Users`, train$`Total Interactions`, 
-     main="Lifetime Engaged Users vs Total Interactions",
-     xlab="Lifetime Engaged Users", ylab="Total Interactions", 
-     col="5423", pch=16)
-```
-Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+cor(train$`Total Interactions`, train$`Lifetime Engaged Users`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Engaged Users`, train$`Total Interactions`, main="Lifetime Engaged Users vs Total Interactions",
+     xlab="Lifetime Engaged Users", ylab="Total Interactions", col="cyan", pch=16)
 
-**Lifetime Post Consumers**(Cristina)
+```
+La correlación es moderada-alta y positiva. Hay una relación bastante fuerte entre las interacciones y los usuarios comprometidos con la publicación
+
+#### Lifetime Post Consumers
 Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación.
 
 ```{r}
+# Resumen (Cristina)
 summary(train$`Lifetime Post Consumers`)
-
 
 ```
 
 
 
 ```{r}
-
+#Histograma (Cristina)
 ggplot(train, aes(x = train$`Lifetime Post Consumers`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -617,27 +617,27 @@ ggplot(train, aes(x = train$`Lifetime Post Consumers`)) +
 ```
 
 ```{r}
+#enfrentamiento con el target (Lucía)
 # Lifetime Post Consumers
-cor(train$`Total Interactions`, train$`Lifetime Post Consumers`, use="complete.obs")  
-plot(train$`Lifetime Post Consumers`, train$`Total Interactions`, 
-     main="Lifetime Post Consumers vs Total Interactions",
-     xlab="Lifetime Post Consumers", ylab="Total Interactions", 
-     col="5423", pch=16)
-```
-Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+cor(train$`Total Interactions`, train$`Lifetime Post Consumers`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Consumers`, train$`Total Interactions`, main="Lifetime Post Consumers vs Total Interactions",
+     xlab="Lifetime Post Consumers", ylab="Total Interactions", col="magenta", pch=16)
 
-**Lifetime Post Consumptions**(Cristina)
+```
+La correlación es moderada y positiva. Hay una relación moderada entre las interacciones y el número de consumidores de la publicación.
+
+#### Lifetime Post Consumptions
 Esto es el número de clics en cualquier parte de una publicación.
 
 ```{r}
+#Histograma (Cristina)
 summary(train$`Lifetime Post Consumptions`)
 ```
 
 
 
 ```{r}
-
-
+#Histograma (Cristina)
 ggplot(train, aes(x = train$`Lifetime Post Consumptions`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -647,16 +647,16 @@ ggplot(train, aes(x = train$`Lifetime Post Consumptions`)) +
 
 
 ```{r}
+#enfrentamiento con el target (Lucía)
 # Lifetime Post Consumptions
-cor(train$`Total Interactions`, train$`Lifetime Post Consumptions`, use="complete.obs")  
-plot(train$`Lifetime Post Consumptions`, train$`Total Interactions`, 
-     main="Lifetime Post Consumptions vs Total Interactions",
-     xlab="Lifetime Post Consumptions", ylab="Total Interactions", 
-     col="5423", pch=16)
-```
-Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+cor(train$`Total Interactions`, train$`Lifetime Post Consumptions`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Consumptions`, train$`Total Interactions`, main="Lifetime Post Consumptions vs Total Interactions",
+     xlab="Lifetime Post Consumptions", ylab="Total Interactions", col="gray", pch=16)
 
-**Lifetime Post Impressions by people who have liked your Page**
+```
+La correlación es baja y positiva. Hay una relación débil entre las interacciones y las consumiciones de la publicación.
+
+#### Lifetime Post Impressions by people who have liked your Page
 
 ```{r}
 # Resumen (Cristina)
@@ -678,16 +678,14 @@ ggplot(train, aes(x = train$`Lifetime Post Impressions by people who have liked 
 
 ```{r}
 #enfrentamiento con el target (Alonso)
-
-
 cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
 plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
      xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
 
 ```
+La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las impresiones de la publicación por personas que han dado "Me gusta" a la página.
 
-
-**Lifetime Post reach by people who like your Page**
+#### Lifetime Post reach by people who like your Page
 
 ```{r}
 # Resumen (Cristina)
@@ -717,9 +715,10 @@ plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Inte
 
 
 ```
+La correlación es alta y positiva. Hay una fuerte relación entre las interacciones y el alcance de la publicación entre las personas que han dado "Me gusta" a la página.
+Cabe recalcar, que esta es la que tine mayor correlación despues de likes y shares.
 
-
-**Lifetime People who have liked your Page and engaged with your post**
+#### Lifetime People who have liked your Page and engaged with your post
 
 ```{r}
 # Resumen (Cristina)
@@ -748,9 +747,8 @@ plot(train$`Lifetime People who have liked your Page and engaged with your post`
      xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
 
 ```
-
-
-**Comment**
+La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las personas que han dado "Me gusta" y se han comprometido con la publicación.
+#### Comment
 Se trata del número de comentarios de la publicación.
 
 ```{r}
@@ -778,9 +776,9 @@ plot(train$comment, train$`Total Interactions`, main="comment vs Total Interacti
      xlab="comment", ylab="Total Interactions", col="blue", pch=16)
 
 ```
+La correlación es moderada-alta y positiva. Hay una relación bastante fuerte entre las interacciones y los comentarios.Esto ya lo podiamos sospechar de antemano debido a que nuestro target se trata de la suma de comments, shares y likes.
 
-
-**Like**
+#### Like
 Se trata del número de “Me gusta” en la publicación.
 
 ```{r}
@@ -807,9 +805,9 @@ cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
 plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
      xlab="Likes", ylab="Total Interactions", col="red", pch=16)
 ```
-Aqui vemos que hay una forma totalmente lineal y sin dipersión. Esto ya lo podiamos sospechar de anremano debido a que nuestro target se trata de la suma de comments, shares y likes. Esta variable claramente es muy exlicativa.
+La correlación es muy alta y positiva. Las interacciones están extremadamente relacionadas con los "Me gusta", lo que sugiere que cuando hay más interacciones, también hay un aumento proporcional en los "Me gusta". Vemos también que hay una forma totalmente lineal y sin dipersión. Esto ya lo podiamos sospechar de anremano debido a que nuestro target se trata de la suma de comments, shares y likes. Esta variable claramente es muy exlicativa.
 
-**Share**
+#### Share
 Se trata del número de veces que se compartió la publicación.
 
 ```{r}
@@ -837,18 +835,18 @@ plot(train$share, train$`Total Interactions`, main="share vs Total Interactions"
      xlab="share", ylab="Total Interactions", col="yellow", pch=16)
 
 ```
-Aqui vemos que hay una forma lineal y poco dispersa. Esto ya lo podiamos sospechar de anremano debido a que nuestro target se trata de la suma de comments, shares y likes.
+La correlación es alta y positiva. Hay una relación fuerte entre las interacciones y las veces que se comparte el contenido. También vemos que hay una forma lineal y poco dispersa. Esto ya lo podiamos sospechar de antemano debido a que nuestro target se trata de la suma de comments, shares y likes.
 
 
 
 
 # Modelos de Regresión lineal
 
-## Regresión lineal simple (Cristina)
+## Regresión lineal simple 
 
 Tras observar las variables hemos optado por hacer la regresión lineal simple enfrentando Total Interactions (nuestro target) con la variable Likes y luego con la variable'Lifetime Post Impressions by people who have liked your Page'
 
-### Regresión lineal simple con likes
+### Regresión lineal simple con likes (Cristina)
 **1: Ajustar el modelo de regresión lineal**
 
 Ajustamos el modelo: Estamos ajustando un modelo de regresión lineal simple donde la variable dependiente es Total Interactions y la variable predictora es Page total likes. Ajustamos el modelo y calculamos los coeficientes de la recta de regresión.
@@ -1124,7 +1122,7 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 
 ```
 
-### Regresión lineal simple con Lifetime Post Impressions by people who have liked your Page
+### Regresión lineal simple con Lifetime Post Impressions by people who have liked your Page (Cristina)
 
 **1: Ajustar el modelo de regresión lineal**
 ```{r}
@@ -1640,6 +1638,34 @@ print(coeficientes_lasso)
 + Las variables como "Post Month", "Lifetime Post Consumers" y "Lifetime Post reach by people who like your Page" tienen efectos negativos sobre las interacciones totales.
 
 + Lasso ha reducido el número de variables que influyen en el modelo, eliminando las que no aportan valor predictivo.
+
+
+## Elastic Net (Lucía)
+La regresión Elastic Net es una técnica de regularización que combina las propiedades de Ridge y Lasso. Permite controlar simultáneamente la reducción de la magnitud de los coeficientes y la eliminación de variables irrelevantes.
+
+```{r}
+# Ajustar modelo Elastic Net
+modelo_elastic_net <- glmnet(X, Y, alpha = 0.5)  # Alpha = 0.5 (50% Ridge, 50% Lasso)
+
+# Seleccionar lambda óptimo con validación cruzada
+cv_elastic_net <- cv.glmnet(X, Y, alpha = 0.5)
+lambda_optimo_n <- cv_elastic_net$lambda.min  # Mejor valor de lambda
+
+print(lambda_optimo_n)
+```
+
+```{r}
+# Ajustar modelo final con lambda óptimo
+modelo_elastic_final <- glmnet(X, Y, alpha = 0.5, lambda = lambda_optimo_n)
+
+# Mostrar coeficientes
+output=cbind(round(coef(modelo_elastic_final),3),output)
+
+colnames(output)=c("ELASTIC","LASSO","RIDGE","OLS")
+
+output
+```
+
 
 
 ## Justificar las elecciones y comparar modelos
