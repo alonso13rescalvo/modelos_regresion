@@ -490,6 +490,7 @@ El modelo final ajusta Total Interactions usando solo 4 variables:
 comment, like, share, like_share_interaccion
 Aqui se ha confirmado que like, share y comment son las variables más relevantes para explicar Total Interactions.
 
+# Evaluar mejoras con métricas
 ```{r}
 # Ver métrica para cada modelo
 summary(modelo_lineal)$adj.r.squared
