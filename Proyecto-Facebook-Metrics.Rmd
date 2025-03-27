@@ -683,7 +683,7 @@ plot(train$`Lifetime Post Impressions by people who have liked your Page`, train
      xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
 
 ```
-La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las impresiones de la publicación por personas que han dado "Me gusta" a la página.
+La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las impresiones de la publicación por personas que han dado "Me gusta" a la página. Cabe recalcar que es de las variables con la correlación más alta.
 
 #### Lifetime Post reach by people who like your Page
 
