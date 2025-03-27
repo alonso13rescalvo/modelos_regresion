@@ -1,5 +1,5 @@
 ---
-title: "alonso_prueba"
+title: "alonso"
 author: "GRUPO 9"
 date: "`r Sys.Date()`"
 output: html_document
@@ -187,7 +187,7 @@ summary(train$`Page total likes`
         )
 ```
 
-# Enfrentar varibale con el target
+# Enfrentar variable con el target
 
 
 ```{r}
@@ -234,13 +234,12 @@ plot(train$`Lifetime Post Impressions by people who have liked your Page`, train
 
 ```
 
-
-
 # Modelo lineal simple LIKE , TOTAL INTERACTIONS
 ```{r}
 # Ajustar el modelo de regresión lineal
 modelo <- lm(train$like ~ train$`Total Interactions`)
-#plot(modelo)
+par(mfrow = c(2,2))
+plot(modelo)
 # Obtener estimadores de los parámetros y errores estándar
 estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
 
@@ -265,22 +264,6 @@ print(tabla_anova)
 library(ggplot2)
 
 # Crear el gráfico de dispersión con la línea de regresión
-ggplot(train, aes(x = train$`Total Interactions`, y = train$like)) +
-  geom_point(color = "blue", alpha = 0.6) +  # Puntos de datos reales
-  geom_smooth(method = "lm", color = "red") +  # Línea de regresión basada en el modelo
-  labs(title = "Relación entre Total Interactions y Likes",
-       x = "Total Interactions",
-       y = "Likes") +
-  theme_minimal()
-
-```
-
-
-```{r}
-# Cargar librerías necesarias
-library(ggplot2)
-
-# Crear el gráfico de dispersión con la línea de regresión
 ggplot(train, aes(x = train$`Total Interactions`, y = train$`Lifetime Post Total Impressions`)) +
   geom_point(color = "blue", alpha = 0.6) +  # Puntos de datos reales
   geom_smooth(method = "lm", color = "red") +  # Línea de regresión basada en el modelo
@@ -289,6 +272,19 @@ ggplot(train, aes(x = train$`Total Interactions`, y = train$`Lifetime Post Total
        y = "Life time post total impressions") +
   theme_minimal()
 
+```
+# MODELOS NO LINEALES
+# Modelo polinomico
+```{r}
+# Ajuste del modelo polinómico de grado 2
+#modelo_polinomico <- lm(train$like ~ poly(train$`Total Interactions`, 2), data = train)
+
+# Resumen del modelo
+#summary(modelo_polinomico)
+#plot(modelo_polinomico)
+# Visualización
+#plot(x, y, main = "Regresión Polinómica de Segundo Grado", pch = 19, col = "blue")
+#lines(x, predict(modelo_polinomico), col = "red", lwd = 2)
 ```
 
 ```{r}
@@ -318,6 +314,30 @@ plot(train$`Total Interactions`, train$comment,
 lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
 
 ```
+# Modelos de Regresión Exponencial y Logarítmica
+```{r}
+# Asegúrate de que 'train' tenga las columnas correctas 'comment' y 'Total Interactions'
+# Si no es el caso, reemplaza 'train$comment' y 'train$`Total Interactions`' por los nombres correctos de las columnas
+
+# Asegúrate de que todos los valores de 'Total Interactions' sean positivos para aplicar logaritmo
+train$`Total Interactions`[train$`Total Interactions` <= 0] <- min(train$`Total Interactions`[train$`Total Interactions` > 0]) * 0.5  # Reemplaza valores no positivos por un valor pequeño positivo
+
+# Ajuste del modelo exponencial (transformación logarítmica)
+modelo_exponencial <- lm(log(`Total Interactions`) ~ comment, data = train)
+
+# Resumen del modelo
+summary(modelo_exponencial)
+
+# Visualización
+plot(train$comment, train$`Total Interactions`, main = "Regresión Exponencial", pch = 19, col = "blue", ylab = "Total Interactions", xlab = "comment")
+
+# Predicciones para los mismos valores de predictor
+predicciones <- predict(modelo_exponencial, newdata = data.frame(comment = train$comment))
+
+# Convertir predicciones a la escala original (exponencial inverso del log)
+lines(train$comment, exp(predicciones), col = "red", lwd = 2)
+
+```
 
 # Regresion spline
 ```{r}
@@ -343,5 +363,6 @@ plot(train$`Total Interactions`, train$`Lifetime Post Total Impressions`,
 lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
 
 ```
+
 
 
