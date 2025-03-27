@@ -20,6 +20,7 @@ library(dplyr)
 library(knitr)
 library(pheatmap)
 library(lmtest)
+library(glmnet)
 
 ```
 
@@ -101,14 +102,14 @@ kable(tabla_variables, caption = "Descripción de las Variables del Dataset")
 
 ## Preguntas a resolver pre-EDA
 
-**¿Cuántas observaciones hay?¿Cuántas variables/características están medidas?** (Alonso)
+**¿Cuántas observaciones hay?¿Cuántas variables/características están medidas?** 
 ```{r}
 dim(dataset_Facebook)
 ```
 Hay 500 observaciones y 19 variables
 
 
-**¿Existen valores faltantes?** (Cristina)
+**¿Existen valores faltantes?** 
 
 ```{r}
 sum(is.na(dataset_Facebook))
@@ -119,41 +120,23 @@ Hay 6 valores faltantes. Más adelante los trataremos.
 **¿Qué tipo variables aparecen en la base de datos?**
 Todas nuestras variables son discretas. A excepcion de un par que son categóticas.
 
-**¿Qué variables son discretas?¿Cuáles son continuas?¿Qué categorías tienen las variables?¿Hay variables tipo texto?** (Alonso)
+**¿Qué variables son discretas?¿Cuáles son continuas?¿Qué categorías tienen las variables?¿Hay variables tipo texto?** 
 
 Todas estas preguntas se resuelven mirando la tabla descriptiva que generamos anteriormente.
 
 
-**Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** (Cristina)
+**Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** 
 Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
 
-**¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.** (Cristina)
+**¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.**
 Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
 
-**¿Es posible identificar la distribución que siguen las variables?** (Cristina)
+**¿Es posible identificar la distribución que siguen las variables?**
 Sí, se puede hacer con gráficos y pruebas estadísticas como: + Histogramas para visualizar la forma de la distribución. + Boxplots para detectar outliers y asimetrías. + Q-Q Plots para comparar con una distribución normal. + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
-**¿Existe correlación entre variables?** (Cristina)
 
-Esto se puede comprobar de la siguiente manera:
-```{r}
-# Seleccionar solo variables numéricas
-numeric_vars <- train[, sapply(train, is.numeric)]
-
-# Calcular la matriz de correlación
-cor_matrix <- cor(numeric_vars, use = "complete.obs")
-
-# Renombrar las variables con nombres más cortos
-colnames(cor_matrix) <- c("1", "2", "3", "4","5", "6", "7", "8","9", "10", "11", "12","13", "14", "15", "16", "17", "18" )  # Edita según tus variables
-rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
-
-# Crear heatmap con nombres cortos
-pheatmap(cor_matrix, display_numbers = TRUE, 
-         color = colorRampPalette(c("#98F5FF", "white", "#AB82FF"))(50))
-
-```
-
-## Partición de los datos (Cristina)
+## Partición de los datos 
+(Cristina)
 
 Realizamos la división de nuestros datos en 3 muestras: entrenamiento, validación y test.
 
@@ -185,7 +168,8 @@ val   <- dataset_Facebook[indices.val, ]
 
 La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target
 
-### Target (Cristina)
+### Target 
+(Cristina)
 
 **Total Interactions**
 Nuestro target es el total de interacciones, que es la suma de “me gusta”, “comentarios” y “compartir” de la publicación.
@@ -477,25 +461,7 @@ A pesar de todo, la correlación es muy baja y negativa. No hay una relación im
 
 #### Paid
 Esta varible trata de si la empresa pagó a Facebook por publicidad (sí=0, no=1).
-```{r}
-# Resumen (Cristina)
-summary(train$Paid)
-table(train$Paid)
 
-```
-
-```{r}
-#Histograma (Cristina)
-# Crear un gráfico de barras para la variable 'Paid'
-ggplot(train, aes(x = factor(Paid))) + 
-  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
-  labs(title = "Gráfico de Barras de Paid", 
-       x = "Paid", 
-       y = "Frecuencia") +
-  theme_minimal()
-
-
-```
 
 
 ```{r}
@@ -508,21 +474,7 @@ plot(train$Paid, train$`Total Interactions`, main="Paid vs Total Interactions",
 
 #### Lifetime Post Total Reach
 Esta es la cantidad de personas que vieron una publicación de la página (usuarios únicos).
-```{r}
-# Resumen (Cristina)
-summary(train$`Lifetime Post Total Reach`)
 
-```
-
-```{r}
-# Histograma (Cristina)
-# Histograma de `Lifetime Post Total Reach` en el conjunto de entrenamiento
-ggplot(train, aes(x = train$`Lifetime Post Total Reach`)) + 
-  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
-  theme_minimal() +
-  labs(title = "Distribución de `Lifetime Post Total Reach`(Train)", x = "`Lifetime Post Total Reach`", y = "Frecuencia")
-
-```
 
 
 ```{r}
@@ -538,21 +490,7 @@ plot(train$`Lifetime Post Total Reach`, train$`Total Interactions`, main="Lifeti
 #### Lifetime Post Total Impressions
 Las impresiones son el número de veces que se muestra una publicación de una página, independientemente de si se hace clic en ella. Es posible que se vean varias impresiones de la misma publicación. Por ejemplo, alguien podría ver una actualización de una página en la sección de noticias una vez y luego otra si un amigo la comparte.
 
-```{r}
-# Resumen (Cristina)
-summary(train$`Lifetime Post Total Impressions`)
 
-```
-
-
-```{r}
-#Histograma (Cristina)
-ggplot(train, aes(x = train$`Lifetime Post Total Impressions`)) + 
-  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
-  theme_minimal() +
-  labs(title = "Distribución de Lifetime Post Total Impressions (Train)", 
-       x = "Lifetime Post Total Impressions", y = "Frecuencia")
-```
 
 
 
@@ -569,21 +507,6 @@ La correlación es moderada y positiva. Existe una relación moderada entre las 
 #### Lifetime Engaged Users
 Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación (usuarios únicos).
 
-```{r}
-# Resumen (Cristina)
-summary(train$`Lifetime Engaged Users`)
-```
-
-
-
-```{r}
-#Histograma (Cristina)
-ggplot(train, aes(x = train$`Lifetime Engaged Users`)) + 
-  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
-  theme_minimal() +
-  labs(title = "Distribución de Lifetime Engaged Users (Train)", 
-       x = "Lifetime Engaged Users", y = "Frecuencia")
-```
 
 
 ```{r}
@@ -599,22 +522,7 @@ La correlación es moderada-alta y positiva. Hay una relación bastante fuerte e
 #### Lifetime Post Consumers
 Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación.
 
-```{r}
-# Resumen (Cristina)
-summary(train$`Lifetime Post Consumers`)
 
-```
-
-
-
-```{r}
-#Histograma (Cristina)
-ggplot(train, aes(x = train$`Lifetime Post Consumers`)) + 
-  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
-  theme_minimal() +
-  labs(title = "Distribución de Lifetime Post Consumers (Train)", 
-       x = "Lifetime Post Consumers", y = "Frecuencia")
-```
 
 ```{r}
 #enfrentamiento con el target (Lucía)
@@ -659,7 +567,7 @@ La correlación es baja y positiva. Hay una relación débil entre las interacci
 #### Lifetime Post Impressions by people who have liked your Page
 
 ```{r}
-# Resumen (Cristina)
+# Resumen
 summary(train$`Lifetime Post Impressions by people who have liked your Page`)
 
 ```
@@ -667,7 +575,7 @@ summary(train$`Lifetime Post Impressions by people who have liked your Page`)
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma
 ggplot(train, aes(x = train$`Lifetime Post Impressions by people who have liked your Page`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -688,7 +596,7 @@ La correlación es moderada-alta y positiva. Hay una relación fuerte entre las 
 #### Lifetime Post reach by people who like your Page
 
 ```{r}
-# Resumen (Cristina)
+# Resumen 
 summary(train$`Lifetime Post reach by people who like your Page`)
 
 
@@ -698,7 +606,7 @@ summary(train$`Lifetime Post reach by people who like your Page`)
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma
 ggplot(train, aes(x = train$`Lifetime Post reach by people who like your Page`)) + 
   geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -721,14 +629,14 @@ Cabe recalcar, que esta es la que tine mayor correlación despues de likes y sha
 #### Lifetime People who have liked your Page and engaged with your post
 
 ```{r}
-# Resumen (Cristina)
+# Resumen 
 summary(train$`Lifetime People who have liked your Page and engaged with your post`)
 ```
 
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma 
 
 
 ggplot(train, aes(x = train$`Lifetime People who have liked your Page and engaged with your post`)) + 
@@ -752,7 +660,7 @@ La correlación es moderada-alta y positiva. Hay una relación fuerte entre las 
 Se trata del número de comentarios de la publicación.
 
 ```{r}
-# Resumen (Cristina)
+# Resumen 
 summary(train$comment)
 
 ```
@@ -760,7 +668,7 @@ summary(train$comment)
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma
 ggplot(train, aes(x = train$comment)) + 
   geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -782,7 +690,7 @@ La correlación es moderada-alta y positiva. Hay una relación bastante fuerte e
 Se trata del número de “Me gusta” en la publicación.
 
 ```{r}
-# Resumen (Cristina)
+# Resumen 
 summary(train$like)
 
 ```
@@ -790,7 +698,7 @@ summary(train$like)
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma 
 ggplot(train, aes(x = train$like)) + 
   geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -811,7 +719,7 @@ La correlación es muy alta y positiva. Las interacciones están extremadamente 
 Se trata del número de veces que se compartió la publicación.
 
 ```{r}
-# Resumen (Cristina)
+# Resumen 
 summary(train$share)
 
 ```
@@ -819,7 +727,7 @@ summary(train$share)
 
 
 ```{r}
-#Histograma (Cristina)
+#Histograma 
 ggplot(train, aes(x = train$share)) + 
   geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
   theme_minimal() +
@@ -890,6 +798,8 @@ Para evaluar la significancia de los coeficientes, se analizaron sus respectivos
 # Obtener resumen del modelo
 summary(modelo)
 ```
+Onviamete nos da que el R^2 es muy alto ya que nuestro target consat de una suma de tres de las variables, entre ellas like.
+
 
 **3: Tabla ANOVA**
 
@@ -1542,10 +1452,22 @@ Ridge Regression es un método de regularización que aplica una penalización p
 train_clean <- na.omit(train)
 
 # Variable objetivo
-Y <- train_clean$`Total Interactions`  
+Y <- train_clean$`Total Interactions` 
 
-# Convertir variables categóricas en dummies (one-hot encoding)
-X1 <- model.matrix(`Total Interactions` ~ ., data = train_clean)[, -1]  # Quitar la intersección
+
+#----------------------------------
+
+# Primero, excluimos las variables "Total Interactions", "comment", "like" y "share"
+train_clean_filtered <- train_clean[, !names(train_clean) %in% c("comment", "like", "share")]
+
+# Realizamos el one-hot encoding para las variables categóricas
+# Convertimos variables categóricas en dummies (one-hot encoding)
+X1 <- model.matrix(`Total Interactions` ~ ., data = train_clean_filtered)[, -1]  # Quitar la intersección
+
+
+
+#-----------------------------------
+
 
 # Ajustar modelo Ridge (alpha = 0 para Ridge)
 modelo_ridge <- glmnet(X1, Y, alpha = 0)
@@ -1593,38 +1515,17 @@ Vemos que OLS no genera coeficientes para muchas variables, lo que indica que el
 
 A la hora de realizar LASSO hemos quitado las variables "comment", "like" y "share" (aparte del target), ya que nuestro target es el resultado de la suma de estas tres variables.
 
-```{r}
-library(glmnet)
-
-# Eliminar filas NA y definir variable dependiente e independientes
-train_clean <- na.omit(train)
-
-# Definir Y (variable objetivo) como "Total Interactions"
-Y <- train_clean$`Total Interactions`
-
-# Definir X (matriz de variables predictoras) excluyendo la variable objetivo
-X <- train_clean[, !names(train_clean) %in% c("Total Interactions", "comment", "like", "share")]
-
-# Eliminar todas las variables categóricas de X
-X <- X[sapply(X, is.numeric)]
-
-# Convertir X a matriz numérica para glmnet
-X <- as.matrix(X)
-
-```
-
-
 
 ```{r}
 # Ajustar el modelo Lasso
-modelo_lasso <- glmnet(X, Y, alpha = 1)
+modelo_lasso <- glmnet(X1, Y, alpha = 1)
 
 # Seleccionar el mejor lambda usando validación cruzada
-cv_lasso <- cv.glmnet(X, Y, alpha = 1)
+cv_lasso <- cv.glmnet(X1, Y, alpha = 1)
 lambda_optimo <- cv_lasso$lambda.min  # Mejor valor de lambda
 
 # Ajustar modelo final con lambda óptimo
-modelo_lasso_final <- glmnet(X, Y, alpha = 1, lambda = lambda_optimo)
+modelo_lasso_final <- glmnet(X1, Y, alpha = 1, lambda = lambda_optimo)
 
 # Mostrar coeficientes del modelo
 coeficientes_lasso <- coef(modelo_lasso_final)
@@ -1645,18 +1546,23 @@ La regresión Elastic Net es una técnica de regularización que combina las pro
 
 ```{r}
 # Ajustar modelo Elastic Net
-modelo_elastic_net <- glmnet(X, Y, alpha = 0.5)  # Alpha = 0.5 (50% Ridge, 50% Lasso)
+modelo_elastic_net <- glmnet(X1, Y, alpha = 0.5)  # Alpha = 0.5 (50% Ridge, 50% Lasso)
 
 # Seleccionar lambda óptimo con validación cruzada
-cv_elastic_net <- cv.glmnet(X, Y, alpha = 0.5)
+cv_elastic_net <- cv.glmnet(X1, Y, alpha = 0.5)
 lambda_optimo_n <- cv_elastic_net$lambda.min  # Mejor valor de lambda
 
 print(lambda_optimo_n)
 ```
 
+
+
+
+
+
 ```{r}
 # Ajustar modelo final con lambda óptimo
-modelo_elastic_final <- glmnet(X, Y, alpha = 0.5, lambda = lambda_optimo_n)
+modelo_elastic_final <- glmnet(X1, Y, alpha = 0.5, lambda = lambda_optimo_n)
 
 # Mostrar coeficientes
 output=cbind(round(coef(modelo_elastic_final),3),output)
@@ -1668,7 +1574,36 @@ output
 
 
 
-## Justificar las elecciones y comparar modelos
+## Comparar modelos
+
+```{r}
+# Ajustar modelo Ridge, Lasso y Elastic Net y almacenar los coeficientes
+coef_ridge <- coef(modelo_ridge_final)
+coef_lasso <- coef(modelo_lasso_final)
+coef_elastic <- coef(modelo_elastic_final)
+coef_ols <- coef(modelo_lm)
+
+# Convertir coeficientes a un formato de dataframe
+coef_ridge_df <- as.data.frame(as.matrix(coef_ridge))
+coef_lasso_df <- as.data.frame(as.matrix(coef_lasso))
+coef_elastic_df <- as.data.frame(as.matrix(coef_elastic))
+coef_ols_df <- as.data.frame(as.matrix(coef_ols))
+
+# Asegurarse de que todos tengan las mismas columnas (variables)
+# Añadir las columnas de coeficientes de los modelos faltantes si es necesario
+# Asumimos que las variables de X1 son las mismas para todos los modelos
+
+# Unificar las columnas de coeficientes con la misma cantidad de filas (variables)
+all_coefs <- data.frame(
+  RIDGE = coef_ridge_df[,1], 
+  LASSO = coef_lasso_df[,1], 
+  ELASTIC = coef_elastic_df[,1],
+  OLS = coef_ols_df[,1]
+)
+# Asignar nombres a las columnas
+colnames(all_coefs) <- c("RIDGE", "LASSO", "ELASTIC", "OLS")
+
+```
 
 
 
@@ -1953,9 +1888,7 @@ Los modelos logarítmico y raíz cuadrada presentan mejor RMSE que el lineal, pe
 El modelo spline, aunque sea  flexible, no funciona bien en este nuestra caso.
 
 
-## necesidad de modelos no lineales
-## transformaciones de variables
-## Evaluar mejoras con métricas
+
   
 
 
