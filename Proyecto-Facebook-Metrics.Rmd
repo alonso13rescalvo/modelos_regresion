@@ -14,10 +14,10 @@ editor_options:
 ---
 ```{r}
 
+library(readr)
 library(ggplot2)
 library(dplyr)
 library(knitr)
-#library(gt)
 library(pheatmap)
 
 ```
@@ -33,11 +33,7 @@ library(pheatmap)
 Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
 
 ```{r lectura, warning=FALSE}
-# lectura de datos en csv
-#dataset_Facebook <- read.csv("datos/dataset_Facebook.csv", stringsAsFactors = FALSE)
-# Cambiamos el nombre de las variables 
-
-library(readr)
+# lectura de datos
 dataset_Facebook <- read_delim("datos/dataset_Facebook.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
 
@@ -57,9 +53,6 @@ Según la descripción oficial de los datos, las variables que conforman el conj
 ## Tabla descriptiva de las variables (Alonso)
 
 ```{r}
-# Cargar librerías necesarias
-library(knitr)  
-
 # Crear un data frame con las descripciones de las variables
 tabla_variables <- data.frame(
   Variable = c("Page total likes", "Type", "Category", "Post Month", "Post Weekday", 
@@ -107,7 +100,28 @@ kable(tabla_variables, caption = "Descripción de las Variables del Dataset")
 
 ## Preguntas a resolver pre-EDA
 
-(preguntas alonso)
+**¿Cuántas observaciones hay?¿Cuántas variables/características están medidas?** (Alonso)
+```{r}
+dim(dataset_Facebook)
+```
+Hay 500 observaciones y 19 variables
+
+
+**¿Existen valores faltantes?** (Cristina)
+
+```{r}
+sum(is.na(dataset_Facebook))
+
+```
+Hay 6 valores faltantes. Más adelante los trataremos.
+
+**¿Qué tipo variables aparecen en la base de datos?**
+Todas nuestras variables son discretas. A excepcion de un par que son categóticas.
+
+**¿Qué variables son discretas?¿Cuáles son continuas?¿Qué categorías tienen las variables?¿Hay variables tipo texto?** (Alonso)
+
+Todas estas preguntas se resuelven mirando la tabla descriptiva que generamos anteriormente.
+
 
 **Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** (Cristina)
 Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
@@ -118,7 +132,25 @@ Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como
 **¿Es posible identificar la distribución que siguen las variables?** (Cristina)
 Sí, se puede hacer con gráficos y pruebas estadísticas como: + Histogramas para visualizar la forma de la distribución. + Boxplots para detectar outliers y asimetrías. + Q-Q Plots para comparar con una distribución normal. + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
-(preguntas lucía)
+**¿Existe correlación entre variables?** (Cristina)
+
+Esto se puede comprobar de la siguiente manera:
+```{r}
+# Seleccionar solo variables numéricas
+numeric_vars <- train[, sapply(train, is.numeric)]
+
+# Calcular la matriz de correlación
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Renombrar las variables con nombres más cortos
+colnames(cor_matrix) <- c("1", "2", "3", "4","5", "6", "7", "8","9", "10", "11", "12","13", "14", "15", "16", "17", "18" )  # Edita según tus variables
+rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
+
+# Crear heatmap con nombres cortos
+pheatmap(cor_matrix, display_numbers = TRUE, 
+         color = colorRampPalette(c("#98F5FF", "white", "#AB82FF"))(50))
+
+```
 
 ## Partición de los datos (Cristina)
 
@@ -184,22 +216,7 @@ ggplot(train, aes(y = `Total Interactions`)) +
   labs(title = "Boxplot del Target (Total Interactions)", y = "Total Interactions")
 ```
 
-```{r}
-# Seleccionar solo variables numéricas
-numeric_vars <- train[, sapply(train, is.numeric)]
 
-# Calcular la matriz de correlación
-cor_matrix <- cor(numeric_vars, use = "complete.obs")
-
-# Renombrar las variables con nombres más cortos
-colnames(cor_matrix) <- c("1", "2", "3", "4","5", "6", "7", "8","9", "10", "11", "12","13", "14", "15", "16", "17", "18" )  # Edita según tus variables
-rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
-
-# Crear heatmap con nombres cortos
-pheatmap(cor_matrix, display_numbers = TRUE, 
-         color = colorRampPalette(c("#98F5FF", "white", "#AB82FF"))(50))
-
-```
 
 ### Variables
 
@@ -444,6 +461,7 @@ ggplot(train, aes(x = factor(`Post Hour`))) +
 
 
 ```
+
 ```{r}
 # Crear un boxplot para enfrentar la variable categórica con el target
 ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`)) +
@@ -461,18 +479,188 @@ Además, se identificaron varios outliers (valores atípicos) en la madrugada (e
 
 
 **Paid**
+Esta varible trata de si la empresa pagó a Facebook por publicidad (sí=0, no=1).
+```{r}
+summary(train$Paid)
+table(train$Paid)
 
-**Lifetime Post Total Reach**
+```
+
+```{r}
+# Crear un gráfico de barras para la variable 'Paid'
+ggplot(train, aes(x = factor(Paid))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de Paid", 
+       x = "Paid", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+
+```{r}
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(Paid), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Paid vs Total Interactions",
+       x = "Paid",
+       y = "Total Interactions") +
+  theme_minimal()
+```
+
+
+**Lifetime Post Total Reach** (Cristina)
+Esta es la cantidad de personas que vieron una publicación de la página (usuarios únicos).
+```{r}
+summary(train$`Lifetime Post Total Reach`)
+
+```
+
+```{r}
+# Histograma de `Lifetime Post Total Reach` en el conjunto de entrenamiento
+ggplot(train, aes(x = train$`Lifetime Post Total Reach`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de `Lifetime Post Total Reach`(Train)", x = "`Lifetime Post Total Reach`", y = "Frecuencia")
+
+```
+
+
+```{r}
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Lifetime Post Total Reach`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Total Reach`, train$`Total Interactions`, main="`Lifetime Post Total Reach` vs Total Interactions",
+     xlab="`Lifetime Post Total Reach``", ylab="Total Interactions", col="5423", pch=16)
+
+```
+Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
 
 **Lifetime Post Total Impressions**
+Las impresiones son el número de veces que se muestra una publicación de una página, independientemente de si se hace clic en ella. Es posible que se vean varias impresiones de la misma publicación. Por ejemplo, alguien podría ver una actualización de una página en la sección de noticias una vez y luego otra si un amigo la comparte.
+
+```{r}
+summary(train$`Lifetime Post Total Impressions`)
+
+```
+
+
+```{r}
+
+ggplot(train, aes(x = train$`Lifetime Post Total Impressions`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Post Total Impressions (Train)", 
+       x = "Lifetime Post Total Impressions", y = "Frecuencia")
+```
+
+
+
+```{r}
+# Lifetime Post Total Impressions
+cor(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, use="complete.obs")  
+plot(train$`Lifetime Post Total Impressions`, train$`Total Interactions`, 
+     main="Lifetime Post Total Impressions vs Total Interactions",
+     xlab="Lifetime Post Total Impressions", ylab="Total Interactions", 
+     col="5423", pch=16)
+```
+Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
+
 
 **Lifetime Engaged Users**
+Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación (usuarios únicos).
+
+```{r}
+summary(train$`Lifetime Engaged Users`)
+```
+
+
+
+```{r}
+ggplot(train, aes(x = train$`Lifetime Engaged Users`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Engaged Users (Train)", 
+       x = "Lifetime Engaged Users", y = "Frecuencia")
+```
+
+
+```{r}
+# Lifetime Engaged Users
+cor(train$`Total Interactions`, train$`Lifetime Engaged Users`, use="complete.obs")  
+plot(train$`Lifetime Engaged Users`, train$`Total Interactions`, 
+     main="Lifetime Engaged Users vs Total Interactions",
+     xlab="Lifetime Engaged Users", ylab="Total Interactions", 
+     col="5423", pch=16)
+```
+Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
 
 **Lifetime Post Consumers**
+Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación.
+
+```{r}
+summary(train$`Lifetime Post Consumers`)
+
+
+```
+
+
+
+```{r}
+
+ggplot(train, aes(x = train$`Lifetime Post Consumers`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Post Consumers (Train)", 
+       x = "Lifetime Post Consumers", y = "Frecuencia")
+```
+
+```{r}
+# Lifetime Post Consumers
+cor(train$`Total Interactions`, train$`Lifetime Post Consumers`, use="complete.obs")  
+plot(train$`Lifetime Post Consumers`, train$`Total Interactions`, 
+     main="Lifetime Post Consumers vs Total Interactions",
+     xlab="Lifetime Post Consumers", ylab="Total Interactions", 
+     col="5423", pch=16)
+```
+Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
 
 **Lifetime Post Consumptions**
+Esto es el número de clics en cualquier parte de una publicación.
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+# Lifetime Post Consumptions
+cor(train$`Total Interactions`, train$`Lifetime Post Consumptions`, use="complete.obs")  
+plot(train$`Lifetime Post Consumptions`, train$`Total Interactions`, 
+     main="Lifetime Post Consumptions vs Total Interactions",
+     xlab="Lifetime Post Consumptions", ylab="Total Interactions", 
+     col="5423", pch=16)
+```
+Podemos ver que es muy dirperso y que no sigue una forma lineal. Por ello podriamos asumir que por si sola no es muy relevante, pero con otras variables podría ser que sí.
 
 **Lifetime Post Impressions by people who have liked your Page**
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
 
 ```{r}
 #enfrentamiento con el target (Alonso)
@@ -488,6 +676,16 @@ plot(train$`Lifetime Post Impressions by people who have liked your Page`, train
 **Lifetime Post reach by people who like your Page**
 
 ```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
 #enfrentamiento con el target (Alonso)
 
 cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
@@ -499,6 +697,16 @@ plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Inte
 
 
 **Lifetime People who have liked your Page and engaged with your post**
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
 
 ```{r}
 #enfrentamiento con el target (Alonso)
@@ -513,6 +721,16 @@ plot(train$`Lifetime People who have liked your Page and engaged with your post`
 **Comment**
 
 ```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
 #enfrentamiento con el target (Alonso)
 cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
 plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
@@ -522,6 +740,16 @@ plot(train$comment, train$`Total Interactions`, main="comment vs Total Interacti
 
 
 **Like**
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
 
 ```{r}
 #enfrentamiento con el target (Alonso)
@@ -534,6 +762,16 @@ plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
 **Share**
 
 ```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
 #enfrentamiento con el target (Alonso)
 cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
 plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
@@ -542,52 +780,7 @@ plot(train$share, train$`Total Interactions`, main="share vs Total Interactions"
 ```
 
 
-## Enfrentar variable con el target (Alonso)
 
-
-```{r}
-
-#LIKE
-cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
-plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
-     xlab="Likes", ylab="Total Interactions", col="red", pch=16)
-
-
-#COMMENT
-cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
-plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
-     xlab="comment", ylab="Total Interactions", col="blue", pch=16)
-
-
-#SHARE
-cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
-plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
-     xlab="share", ylab="Total Interactions", col="yellow", pch=16)
-
-
-#Lifetime People who have liked your Page and engaged with your post
-
-cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
-plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
-     xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
-
-
-#Lifetime Post reach by people who like your Page
-
-cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
-plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
-     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
-
-
-#Lifetime Post Impressions by people who have liked your Page
-
-
-cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
-plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
-     xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
-
-
-```
 
 # Modelos de Regresión lineal
 
@@ -606,6 +799,7 @@ Esto nos permite entender la relación entre Page total likes y Total Interactio
 
 ```{r}
 # Ajustar el modelo de regresión lineal
+# tambien nos encargamos de los valores faltantes para que no den problemas
 train_clean <- na.omit(train)
 modelo <- lm(`Total Interactions` ~ `like`, data = train_clean)
 
