@@ -1,0 +1,523 @@
+---
+title: "alonso"
+author: "GRUPO 9"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## Cargar los datos
+
+```{r}
+library(readr)
+library(ggplot2)
+dataset_Facebook <- read_delim("dataset_Facebook.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(dataset_Facebook)
+#View(dataset_Facebook)
+```
+```{r lectura, warning=FALSE}
+# lectura de datos en csv
+#datos<-read.csv("dataset_Facebook.csv")
+# Cambiamos el nombre de las variables 
+
+#datos<-read.csv("datos/datos.csv")
+ntotal <- dim(dataset_Facebook)[1] # numero de observaciones
+ptotal <- dim(dataset_Facebook)[2] # numero de columnas
+
+
+
+```
+
+## Partición de los datos
+Realizamos la división de nuestros datos en 3 muestras: entrenamiento, validación y test.
+
+```{r particion}
+# mediante una semilla conseguimos que el ejercicio sea reproducible
+set.seed(1)
+
+
+# creamos índices
+indices <- 1:ntotal
+ntrain <- ntotal * .5
+ntest <- ntotal * .25
+nval <- ntotal - (ntrain+ntest)
+indices.train <- sample(indices, ntrain, replace = FALSE)
+indices.test <- sample(indices[-indices.train],ntest,replace=FALSE)
+indices.val <- indices[-c(indices.train,indices.test)]
+
+# Usamos el 50% de la base de datos como conjunto de entrenamiento
+# 25% para test
+# 25% para validación
+train  <- dataset_Facebook[indices.train, ]
+test   <- dataset_Facebook[indices.test, ]
+val   <- dataset_Facebook[indices.val, ]
+
+```
+
+
+```{r}
+# Cargar librerías necesarias
+library(knitr)  
+
+# Crear un data frame con las descripciones de las variables
+tabla_variables <- data.frame(
+  Variable = c("Page total likes", "Type", "Category", "Post Month", "Post Weekday", 
+               "Post Hour", "Paid", "Lifetime Post Total Reach", "Lifetime Post Total Impressions", 
+               "Lifetime Engaged Users", "Lifetime Post Consumers", "Lifetime Post Consumptions", 
+               "Lifetime Post Impressions by people who have liked your Page", 
+               "Lifetime Post reach by people who like your Page", 
+               "Lifetime People who have liked your Page and engaged with your post", 
+               "comment", "like", "share", "Total Interactions"),
+  
+  Tipo = c("Numérica", "Categórica", "Categórica", "Numérica", "Numérica", 
+           "Numérica", "Binaria", "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", 
+           "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", "Numérica", "Numérica"),
+  
+  Descripción = c("Cantidad total de 'me gusta' en la página",
+                  "Tipo de post (foto, estado, video, etc.)",
+                  "Categoría del post",
+                  "Mes en el que se realizó la publicación",
+                  "Día de la semana en que se publicó",
+                  "Hora del día en que se publicó",
+                  "Indica si la publicación fue pagada (1) o no (0)",
+                  "Alcance total de la publicación",
+                  "Total de impresiones de la publicación",
+                  "Usuarios comprometidos con la publicación",
+                  "Número de consumidores de la publicación",
+                  "Total de interacciones con la publicación",
+                  "Impresiones por personas que han dado 'me gusta' a la página",
+                  "Alcance de la publicación por personas que han dado 'me gusta' a la página",
+                  "Personas que dieron 'me gusta' a la página e interactuaron con la publicación",
+                  "Número de comentarios en la publicación",
+                  "Número de 'me gusta' en la publicación",
+                  "Número de veces que se compartió la publicación",
+                  "Total de interacciones (comentarios, likes y compartidos)")
+)
+
+# Mostrar la tabla en formato bonito
+kable(tabla_variables, caption = "Descripción de las Variables del Dataset")
+
+
+```
+
+
+## Tamaño de la base de datos
+```{r}
+dim(dataset_Facebook)
+```
+Hay **500** observaciones y **19** variables
+**Todas** nuestras **variables** son **discretas**.
+
+
+# Calculos estadísticos
+
+# Page total likes
+```{r}
+# Media page total likes
+
+mean(dataset_Facebook$`Page total likes`)
+# desviacion tipica
+
+sd(dataset_Facebook$`Page total likes`)
+
+#frecuencia
+# frecuencia absoluta 
+ptlikes <- (dataset_Facebook$`Page total likes`)
+table(ptlikes)
+#frecuencia relativa
+prop.table(ptlikes)
+
+
+```
+# Type
+```{r}
+#tabla frecuencias
+
+table(dataset_Facebook$Type)
+
+prop.table(table(dataset_Facebook$Type))
+```
+```{r}
+summary(train
+        )
+```
+
+# Category
+```{r}
+#tabla freceuncias
+
+table(dataset_Facebook$Category)
+prop.table(table(dataset_Facebook$Category))
+
+```
+# Post month
+```{r}
+# tabla frecuencias
+table(dataset_Facebook$`Post Month`)
+prop.table(table(dataset_Facebook$`Post Month`))
+```
+
+# Post Weekday
+```{r}
+# frecuencias
+table(dataset_Facebook$`Post Weekday`)
+prop.table(table(dataset_Facebook$`Post Weekday`))
+
+```
+# Post hour
+```{r}
+# frecuencias
+table(dataset_Facebook$`Post Hour`)
+prop.table(table(dataset_Facebook$`Post Hour`))
+```
+# Paid
+```{r}
+# frecuencias
+table(dataset_Facebook$Paid)
+prop.table(table(dataset_Facebook$Paid))
+```
+# Life time post total reach
+```{r}
+# media
+mean(dataset_Facebook$`Lifetime Post Total Reach`)
+# desviacion tipica
+sd(dataset_Facebook$`Lifetime Post Total Reach`)
+summary(train$`Page total likes`
+        )
+```
+
+# Enfrentar variable con el target
+
+
+```{r}
+
+#LIKE
+cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
+plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
+     xlab="Likes", ylab="Total Interactions", col="red", pch=16)
+
+
+#COMMENT
+cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
+plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
+     xlab="comment", ylab="Total Interactions", col="blue", pch=16)
+
+
+#SHARE
+cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
+plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
+     xlab="share", ylab="Total Interactions", col="yellow", pch=16)
+
+
+#Lifetime People who have liked your Page and engaged with your post
+
+cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
+plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
+     xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
+
+
+#Lifetime Post reach by people who like your Page
+
+cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
+     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
+
+
+#Lifetime Post Impressions by people who have liked your Page
+
+
+cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
+     xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
+
+
+```
+
+# Modelo lineal simple LIKE , TOTAL INTERACTIONS
+```{r}
+# Ajustar el modelo de regresión lineal
+modelo <- lm(train$like ~ train$`Total Interactions`)
+par(mfrow = c(2,2))
+plot(modelo)
+# Obtener estimadores de los parámetros y errores estándar
+estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
+
+# Imprimir los resultados
+cat("Estimadores para los parámetros del modelo:\n")
+print(estimadores)
+summary(modelo)
+```
+```{r}
+
+# Obtener y mostrar la tabla ANOVA
+tabla_anova <- anova(modelo)
+cat("Tabla ANOVA:\n")
+
+#Tabla ANOVA:
+
+print(tabla_anova)
+```
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Crear el gráfico de dispersión con la línea de regresión
+ggplot(train, aes(x = train$`Total Interactions`, y = train$`Lifetime Post Total Impressions`)) +
+  geom_point(color = "blue", alpha = 0.6) +  # Puntos de datos reales
+  geom_smooth(method = "lm", color = "red") +  # Línea de regresión basada en el modelo
+  labs(title = "Relación entre Total Interactions y Likes",
+       x = "Total Interactions",
+       y = "Life time post total impressions") +
+  theme_minimal()
+
+```
+# MODELOS NO LINEALES
+# Modelo polinomico
+```{r}
+# Ajuste del modelo polinómico de grado 2
+#modelo_polinomico <- lm(train$like ~ poly(train$`Total Interactions`, 2), data = train)
+
+# Resumen del modelo
+#summary(modelo_polinomico)
+#plot(modelo_polinomico)
+# Visualización
+#plot(x, y, main = "Regresión Polinómica de Segundo Grado", pch = 19, col = "blue")
+#lines(x, predict(modelo_polinomico), col = "red", lwd = 2)
+```
+
+```{r}
+# Cargar librerías necesarias
+library(ggplot2)
+
+# Ajuste del modelo polinómico de grado 2
+modelo_polinomico <- lm(comment ~ poly(`Total Interactions`, 2), data = train)
+
+# Resumen del modelo
+summary(modelo_polinomico)
+
+# Diagnóstico del modelo
+plot(modelo_polinomico)
+
+# Visualización de la regresión polinómica
+# Ordenamos los valores de X para que la curva de la predicción sea suave
+x_ordenado <- train[order(train$`Total Interactions`), ]  # Ordenar datos
+predicciones <- predict(modelo_polinomico, newdata = x_ordenado)  # Predicciones ordenadas
+
+# Gráfico base con puntos
+plot(train$`Total Interactions`, train$comment, 
+     main = "Regresión Polinómica de Segundo Grado",
+     pch = 19, col = "blue", xlab = "Total Interactions", ylab = "Comment")
+
+# Agregar la línea de la regresión
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
+# Modelos de Regresión Exponencial y Logarítmica
+```{r}
+# Asegurar que los valores de 'Total Interactions' sean positivos para aplicar logaritmo
+train$`Total Interactions`[train$`Total Interactions` <= 0] <- 
+  min(train$`Total Interactions`[train$`Total Interactions` > 0]) * 0.5
+
+# Ajuste del modelo exponencial (transformación logarítmica)
+modelo_exponencial <- lm(log(`Total Interactions`) ~ like, data = train)
+
+# Ver resumen del modelo
+summary(modelo_exponencial)
+
+# Visualización: relación entre like y Total Interactions
+plot(train$like, train$`Total Interactions`,
+     main = "Regresión Exponencial",
+     pch = 19, col = "blue",
+     ylab = "Total Interactions", xlab = "like")
+
+# Predicciones para los valores reales de 'like'
+predicciones <- predict(modelo_exponencial, newdata = train)
+
+# Dibujar línea de predicción (transformación inversa de log)
+orden <- order(train$like)
+lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
+
+```
+
+# Regresion spline
+```{r}
+# Cargar librería para splines
+library(splines)
+
+# Ajuste del modelo spline con tus datos reales
+modelo_spline <- lm(train$`Lifetime Post Total Impressions` ~ bs(`Total Interactions`, knots = c(30, 60, 80)), data = train)
+
+# Ordenar los datos por 'Total Interactions' para graficar correctamente
+x_ordenado <- train[order(train$`Total Interactions`), ]
+
+# Predicciones basadas en el modelo ajustado
+predicciones <- predict(modelo_spline, newdata = x_ordenado)
+
+# Gráfico de dispersión con la curva spline
+plot(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, 
+     main = "Regresión Spline", 
+     pch = 19, col = "blue", 
+     xlab = "Total Interactions", ylab = "Life time post tootal impressions")
+
+# Agregar la línea de regresión spline
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
+# Transformación de variables
+
+## Transformación logaritmica
+```{r}
+# Modelo lineal con transformación logarítmica de la variable objetivo
+modelo_log <- lm(log(train$`Total Interactions`) ~ like + comment + share, data = train)
+# Visualización: relación entre 'like' y 'Total interactions'
+plot(train$like, train$`Total interactions`,
+     main = "Transformación logarítmica del modelo",
+     pch = 19, col = "blue",
+     ylab = "Total interactions", xlab = "like")
+
+# Predicciones para los valores reales de 'like', 'comment' y 'share'
+predicciones <- predict(modelo_log, newdata = train)
+
+# Dibujar la curva ajustada (volviendo a escala original con exp)
+orden <- order(train$like)  # para que la línea quede ordenada
+lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
+
+
+```
+# Transformación de Raíz cuadrada
+```{r}
+# Ajuste del modelo con transformación raíz cuadrada en la variable dependiente
+modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ like, data = train)
+
+# Ver resumen del modelo
+summary(modelo_sqrt)
+
+# Visualización: datos reales
+plot(train$like, train$`Total interactions`,
+     main = "Transformación SQRT",
+     pch = 19, col = "blue",
+     ylab = "Total interactions", xlab = "like")
+
+# Predicciones del modelo
+predicciones <- predict(modelo_sqrt, newdata = train)
+
+# Dibujar línea de predicción (transformando de nuevo al cuadrado)
+orden <- order(train$like)
+lines(train$like[orden], (predicciones[orden])^2, col = "red", lwd = 2)
+modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ comment, data = train)
+
+```
+# Transformación de Box-Cox
+```{r}
+# Cargar librería necesaria
+library(MASS)
+
+# Asegurar que 'Total Interactions' sea estrictamente positiva
+if (min(train$`Total Interactions`) <= 0) {
+  train$`Total Interactions` <- train$`Total Interactions` + abs(min(train$`Total Interactions`)) + 1
+}
+
+# Ajustar un modelo lineal simple
+modelo_bc <- lm(`Total Interactions` ~ like, data = train)
+
+# Aplicar transformación de Box-Cox
+boxcox(modelo_bc,
+       lambda = seq(-2, 2, 0.1),
+       main = "Transformación de Box-Cox")
+
+```
+El valor óptimo de lambda ≈ 1 implica que no es necesario transformar la variable dependiente (Total Interactions), ya que:
+Lambda = 1 significa que el modelo lineal original con y sin transformar ya es adecuado.
+Otras transformaciones (como logarítmica, raíz cuadrada, inversa) no mejorarían significativamente el ajuste.
+Además, la curva del log-likelihood muestra un pico muy claro en λ = 1, y el intervalo de confianza del 95% (las líneas punteadas horizontales) incluye ese valor.
+Por lo tanto las tranformaciones anterioeres podemos decir que son innecesarias.
+
+
+# INGENIERÍA DE CARACTERÍSTICAS
+
+## Creación de una nueva variable. Variable de interacción
+```{r}
+
+# Crear nueva variable de interacción
+train$like_share_interaccion <- train$like * train$share
+
+# Ajustar modelo con interacción
+modelo_interaccion <- lm(train$`Total Interactions` ~ like + share + like_share_interaccion, data = train)
+
+# Ver resumen del modelo
+summary(modelo_interaccion)
+
+
+```
+
+Acerca del modelo de interacción:
+R² = 0.998 y R² ajustado = 0.998, lo que indica que el modelo explica el 99.8% de la variabilidad en Total Interactions.
+Error estándar residual ≈ 10.39, bastante bajo.
+p-valor global < 2.2e-16, lo que indica que el modelo es muy significativo.
+Like y share son altamente significativos (p < 2e-16) y contribuyen de forma positiva al número total de interacciones.
+La interacción like_share_interaccion también es significativa (p ≈ 2.84e-09), lo que quiere decir  que el efecto de los “likes” en Total Interactions varía según el número de “shares” (y viceversa).
+Otra observacion que podemos ver es que el intercept no es significativo (p = 0.154), pero eso no afecta la utilidad predictiva si el resto del modelo es sólido.
+
+
+# Selección y reduccion de variables
+
+```{r}
+# Cargar librería
+library(MASS)
+train_limpio <- na.omit(train)
+# Crear modelo completo con todas las variables numéricas
+modelo_completo <- lm(`Total Interactions` ~ 
+  `Page total likes` + Category + `Post Month` + `Post Weekday` + `Post Hour` + Paid +
+  `Lifetime Post Total Reach` + `Lifetime Post Total Impressions` +
+  `Lifetime Engaged Users` + `Lifetime Post Consumers` + `Lifetime Post Consumptions` +
+  `Lifetime Post Impressions by people who have liked your Page` +
+  `Lifetime Post reach by people who like your Page` +
+  `Lifetime People who have liked your Page and engaged with your post` +
+  comment + like + share + like_share_interaccion,
+  data = train_limpio)
+
+# Aplicar selección stepwise en ambas direcciones
+modelo_stepwise <- step(modelo_completo, direction = "both")
+
+# Mostrar resumen del modelo seleccionado
+summary(modelo_stepwise)
+
+```
+El modelo final ajusta Total Interactions usando solo 4 variables:
+comment, like, share, like_share_interaccion
+Aqui se ha confirmado que like, share y comment son las variables más relevantes para explicar Total Interactions.
+
+```{r}
+# Ver métrica para cada modelo
+summary(modelo_lineal)$adj.r.squared
+summary(modelo_interaccion)$adj.r.squared
+summary(modelo_stepwise)$adj.r.squared
+
+AIC(modelo_lineal)
+AIC(modelo_interaccion)
+AIC(modelo_stepwise)
+
+# Función para RMSE
+rmse <- function(modelo) {
+  sqrt(mean(residuals(modelo)^2))
+}
+
+rmse(modelo_lineal)
+rmse(modelo_interaccion)
+rmse(modelo_stepwise)
+
+```
+
+El mejor modelo será el que tenga:
+
+El mayor R² ajustado
+
+El menor AIC / BIC
+
+El menor RMSE
+
+Si un modelo tiene R² muy alto pero RMSE alto o AIC muy elevado, puede estar sobreajustado.
+
