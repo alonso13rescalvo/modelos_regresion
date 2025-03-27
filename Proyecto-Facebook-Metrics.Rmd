@@ -54,7 +54,54 @@ Comprobamos que tenemos $n=$`r ntotal` observaciones y $p=$`r ptotal` variables 
 
 Según la descripción oficial de los datos, las variables que conforman el conjunto de datos son:
 
-(aqui iria da descripcion de las varibles y tal, la tablita que hizo Alonso)
+## Tabla descriptiva de las variables (Alonso)
+
+```{r}
+# Cargar librerías necesarias
+library(knitr)  
+
+# Crear un data frame con las descripciones de las variables
+tabla_variables <- data.frame(
+  Variable = c("Page total likes", "Type", "Category", "Post Month", "Post Weekday", 
+               "Post Hour", "Paid", "Lifetime Post Total Reach", "Lifetime Post Total Impressions", 
+               "Lifetime Engaged Users", "Lifetime Post Consumers", "Lifetime Post Consumptions", 
+               "Lifetime Post Impressions by people who have liked your Page", 
+               "Lifetime Post reach by people who like your Page", 
+               "Lifetime People who have liked your Page and engaged with your post", 
+               "comment", "like", "share", "Total Interactions"),
+  
+  Tipo = c("Numérica", "Categórica", "Categórica", "Numérica", "Numérica", 
+           "Numérica", "Binaria", "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", 
+           "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", "Numérica", "Numérica"),
+  
+  Descripción = c("Cantidad total de 'me gusta' en la página",
+                  "Tipo de post (foto, estado, video, etc.)",
+                  "Categoría del post",
+                  "Mes en el que se realizó la publicación",
+                  "Día de la semana en que se publicó",
+                  "Hora del día en que se publicó",
+                  "Indica si la publicación fue pagada (1) o no (0)",
+                  "Alcance total de la publicación",
+                  "Total de impresiones de la publicación",
+                  "Usuarios comprometidos con la publicación",
+                  "Número de consumidores de la publicación",
+                  "Total de interacciones con la publicación",
+                  "Impresiones por personas que han dado 'me gusta' a la página",
+                  "Alcance de la publicación por personas que han dado 'me gusta' a la página",
+                  "Personas que dieron 'me gusta' a la página e interactuaron con la publicación",
+                  "Número de comentarios en la publicación",
+                  "Número de 'me gusta' en la publicación",
+                  "Número de veces que se compartió la publicación",
+                  "Total de interacciones (comentarios, likes y compartidos)")
+)
+
+# Mostrar la tabla en formato bonito
+kable(tabla_variables, caption = "Descripción de las Variables del Dataset")
+
+
+```
 
 # EDA
 
@@ -427,15 +474,120 @@ Además, se identificaron varios outliers (valores atípicos) en la madrugada (e
 
 **Lifetime Post Impressions by people who have liked your Page**
 
+```{r}
+#enfrentamiento con el target (Alonso)
+
+
+cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
+     xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
+
+```
+
+
 **Lifetime Post reach by people who like your Page**
+
+```{r}
+#enfrentamiento con el target (Alonso)
+
+cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
+     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
+
+
+```
+
 
 **Lifetime People who have liked your Page and engaged with your post**
 
+```{r}
+#enfrentamiento con el target (Alonso)
+
+cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
+plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
+     xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
+
+```
+
+
 **Comment**
+
+```{r}
+#enfrentamiento con el target (Alonso)
+cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
+plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
+     xlab="comment", ylab="Total Interactions", col="blue", pch=16)
+
+```
+
 
 **Like**
 
+```{r}
+#enfrentamiento con el target (Alonso)
+cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
+plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
+     xlab="Likes", ylab="Total Interactions", col="red", pch=16)
+```
+
+
 **Share**
+
+```{r}
+#enfrentamiento con el target (Alonso)
+cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
+plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
+     xlab="share", ylab="Total Interactions", col="yellow", pch=16)
+
+```
+
+
+## Enfrentar variable con el target (Alonso)
+
+
+```{r}
+
+#LIKE
+cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
+plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
+     xlab="Likes", ylab="Total Interactions", col="red", pch=16)
+
+
+#COMMENT
+cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
+plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
+     xlab="comment", ylab="Total Interactions", col="blue", pch=16)
+
+
+#SHARE
+cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
+plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
+     xlab="share", ylab="Total Interactions", col="yellow", pch=16)
+
+
+#Lifetime People who have liked your Page and engaged with your post
+
+cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
+plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
+     xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
+
+
+#Lifetime Post reach by people who like your Page
+
+cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
+     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
+
+
+#Lifetime Post Impressions by people who have liked your Page
+
+
+cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
+     xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
+
+
+```
 
 # Modelos de Regresión lineal
 
@@ -720,7 +872,144 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 
 ## Regresión lineal múltiple (Lucía)
 
-todas
+
+### Ajuste del modelo de Regresión Lineal Múltiple
+
+Ajustamos un modelo de regresión lineal múltiple para predecir el número total de interacciones (Total Interactions) en función de todas las variables disponibles.
+
+```{r}
+# Ajustar el modelo de regresión lineal múltiple
+modelo_facebook <- lm(`Total Interactions` ~ ., data = train_clean)
+
+# Mostrar el resumen del modelo
+summary(modelo_facebook)
+
+```
+Los valores p permiten identificar qué variables son estadísticamente significativas. Cuanto menor sea p, más significativa será esa variable a la hora de predecir el número total de interacciones.
+
+Comment, like y share tienen valores p extremadamente pequeños (prácticamente 0). Esto de debe a que Total Interactions es simplemente la suma de estas tres variables.
+
+TypeStatus, Paid y Lifetime Post Total Impressions también resultan ser significativos, ya que su p-valor es prácticamente 0. TypeStatus tiene un efecto positivo (coeficiente positivo), lo que indica que las publicaciones de tipo "Status" generan más interacciones. En cambio, paid tiene un efecto negativo (coeficiente negativo), lo que sugiere que las publicaciones patrocinadas reciben menos interacciones totales.
+
+
+### Selección de variables para optimizar el modelo
+```{r}
+# Método Stepwise para selección de variables
+modelo_stepwise <- step(modelo_facebook, direction = "both", trace = 0)
+
+# Resumen del modelo optimizado
+summary(modelo_stepwise)
+```
+
+
+### Evaluación del modelo con Validación Cruzada
+
+Usaremos validación cruzada k-fold para evaluar la capacidad predictiva del modelo. Dividiremos el conjunto de datos en 10 particiones (folds), utilizando 9 para entrenar y 1 para probar, repitiendo este proceso 10 veces.
+
+```{r}
+library(caret)
+
+# Configuración de la validación cruzada de 10-fold
+control <- trainControl(method = "cv", number = 10)
+
+# Ajuste del modelo con validación cruzada usando caret
+modelo_cv <- train(`Total Interactions` ~ .,  # Usar backticks si hay espacios
+                   data = train_clean, 
+                   method = "lm", 
+                   trControl = control)
+
+# Resultados de la validación cruzada
+print(modelo_cv)
+
+```
+La salida muestra métricas como el RMSE (Root Mean Squared Error) y el R², que miden la capacidad del modelo para predecir correctamente el consumo de combustible. Un RMSE bajo y un R² alto indican un buen rendimiento del modelo.
+
+En este caso vemos que el tamaño de las muestras en cada iteración varía ligeramente entre 222 y 223 observaciones.
+
+R² = 1 significa que el modelo explica el 100% de la variabilidad en la variable objetivo, lo que indica que los predictores usados son suficientes para hacer predicciones perfectas.
+
+RMSE ≈ 0 y MAE ≈ 0 indican que las predicciones son prácticamente idénticas a los valores reales.
+`
+
+### Análisis de residuos
+
+```{r}
+# Residuals vs Fitted
+plot(modelo_facebook, which = 1) 
+```
+
+El gráfico de residuals vs Fitted (Residuos vs Valores Ajustados) muestra si los residuos presentan algún patrón sistemático en función de los valores ajustados. En un buen modelo, los residuos deberían estar dispersos alrededor de la línea horizontal (en 0). En cambio, parece haber una ligera curva en los residuos, especialmente en valores más altos.
+
+```{r}
+# Q-Q Plot
+plot(modelo_facebook, which = 2) 
+```
+
+El QQ-plot ayuda a verificar si los residuos siguen una distribución normal. En ese caso, los puntos deberíann alinearse en la diagonal punteada. Vemos que en los valores extremos (colas), los puntos se desvían bastante de la línea diagonal. Esto sugiere que los residuos no son perfectamente normales y que hay valores atípicos o colas más pesadas de lo esperado en una distribución normal.
+
+```{r}
+ # Scale-Location
+plot(modelo_facebook, which = 3)
+```
+
+El gráfico Scale-Location evalúa si la varianza de los residuos es constante. Observamos que hay cierta tendencia ascendente, lo que sugiere  heterocedasticidad, es decir, los residuos no tienen una varianza constante.
+
+```{r}
+# Residuals vs Leverage
+plot(modelo_facebook, which = 5) 
+```
+
+Por último, el gráfico Residuals vs Leverage ayuda a identificar puntos atípicos e influyentes en el modelo. Hay algunos puntos con leverage alto y residuos grandes, lo que sugiere que pueden ser valores atípicos o datos muy influyentes en el modelo.
+
+
+```{r}
+# Prueba de normalidad de los residuos
+shapiro.test(residuals(modelo_facebook))
+```
+
+La prueba de Shapiro-Wilk evalúa la normalidad de los residuos, al igual que el Q-Q Plot anterior.
+
+La hipótesis nula (H0) establece que los residuos siguen una distribución normal.
+
+Hemos obtenido un p-valor = 2.2e-16. Como el p-valor es menor que 0.05, tenemos suficiente evidencia estadística para rechazar la hipótesis nula. Esto indica que los residuos NO siguen una distribución normal, confirmando lo que vimos con el Q-Q Plot.
+
+
+```{r}
+# Prueba de homocedasticidad (Breusch-Pagan)
+library(lmtest)
+bptest(modelo_facebook)
+```
+
+La prueba de Breusch-Pagan verifica la homocedasticidad de los residuos, es decir, si la varianza de los errores es constant, al igual que el gráfico Scale-Location.
+
+La hipótesis nula (H0) establece que los residuos tienen varianza constante (homocedasticidad).
+
+Hemos obtenido un p-valor = 4.776e-14. Como el p-valor es menor que 0.05, tenemos suficiente evidencia estadística para rechazar la hipótesis nula. Esto sugiere que los residuos NO tienen varianza constante, es decir, existe heterocedasticidad en el modelo.
+
+### Diagnóstico de Multicolinealidad y observaciones influyentes
+
+La multicolinealidad puede afectar la estabilidad de los coeficientes del modelo. Además, es importante identificar observaciones influyentes que puedan distorsionar los resultados.
+
+
+```{r}
+library(car)
+
+# Diagnóstico de multicolinealidad usando el VIF (Variance Inflation Factor)
+vif(modelo_facebook)
+```
+Un VIF mayor que 5 indica la presencia de multicolinealidad.
+
+```{r}
+# Identificación de observaciones influyentes utilizando la distancia de Cook
+influencia <- cooks.distance(modelo_facebook)
+
+# Visualización de observaciones influyentes
+plot(influencia, type = "h", main = "Distancia de Cook", ylab = "Influencia")
+abline(h = 4/(nrow(train) - length(modelo_facebook$coefficients)), col = "red")
+
+```
+
+La distancia de Cook permite identificar observaciones que tienen una gran influencia en los resultados del modelo. Valores por encima de la línea roja deben ser investigados.
 
 
 # Métodos de selección de variables y problemas de regularización 
@@ -728,6 +1017,58 @@ todas
 
 ## Ridge (Lucía)
 
+Ridge Regression es un método de regularización que aplica una penalización proporcional al cuadrado de los coeficientes, lo que permite manejar problemas de multicolinealidad pero no conduce a la eliminación completa de variables.
+
+```{r}
+
+# Eliminar filas con valores NA
+train_clean <- na.omit(train)
+
+# Variable objetivo
+Y <- train_clean$`Total Interactions`  
+
+# Convertir variables categóricas en dummies (one-hot encoding)
+X1 <- model.matrix(`Total Interactions` ~ ., data = train_clean)[, -1]  # Quitar la intersección
+
+# Ajustar modelo Ridge (alpha = 0 para Ridge)
+modelo_ridge <- glmnet(X1, Y, alpha = 0)
+
+# Seleccionar lambda óptimo con validación cruzada
+cv_ridge <- cv.glmnet(X1, Y, alpha = 0)
+lambda_optimo_r <- cv_ridge$lambda.min  # Mejor valor de lambda
+
+# Mostrar lambda óptimo
+print(lambda_optimo_r)
+
+```
+Lambda (λ) controla la penalización sobre los coeficientes del modelo.
+
+Un valor alto de λ indica que el modelo está restringiendo fuertemente los coeficientes para reducir el sobreajuste. Un valor bajo de λ haría que el modelo sea similar a una regresión lineal sin penalización.
+
+En este caso, 23.42625 es el valor de λ que mejor equilibra la reducción de sobreajuste sin perder demasiada capacidad predictiva. Esto sugiere que hay variables altamente correlacionadas, y la regularización es necesaria para estabilizar los coeficientes.
+
+```{r}
+# Ajustar modelo final con lambda óptimo
+modelo_ridge_final <- glmnet(X1, Y, alpha = 0, lambda = lambda_optimo_r)
+
+modelo_ridge_final
+```
+El modelo Ridge con lambda = 23.43 retiene 21 predictores y logra explicar el 98.83% de la variabilidad en la variable objetivo, lo que indica un buen ajuste.
+
+```{r}
+# Comparación modelo clásico
+
+modelo_lm <- lm(Y~X1)
+
+# Mostrar coeficientes
+output=cbind(round(coef(modelo_ridge_final),3),
+            round(coef(modelo_lm),3))
+
+colnames(output)=c("RIDGE","OLS")
+
+output
+```
+Vemos que OLS no genera coeficientes para muchas variables, lo que indica que el modelo puede estar inestable o mal ajustado. En cambio Ridge logra un modelo más estable y menos susceptible a la multicolinealidad, reduciendo coeficientes sin eliminarlos por completo.
 
 
 
