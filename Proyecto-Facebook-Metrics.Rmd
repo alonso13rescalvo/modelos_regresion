@@ -1051,7 +1051,7 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 modelo2 <- lm(`Total Interactions` ~ `Lifetime Post Impressions by people who have liked your Page`, data = train_clean)
 
 # Obtener estimadores de los parámetros y errores estándar
-estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
+estimadores <- coef(summary(modelo2))  # Incluye estimadores y errores estándar
 
 # Imprimir los resultados
 cat("Estimadores para los parámetros del modelo:\n")
@@ -1304,7 +1304,10 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 
 ```
 
+### Conclusión
 
+Como era obvio, el mejor modelo de estos dos sería el que usa la variable Like. Esto ya lo podíamos suponer debido a que nuestra variable objetivo es la suma de tres variables, entre ellas likes.
+También hemos observado que en términos de ajuste (R² más alto) y precisión (error residual más bajo), el segundo modelo no es demasiado bueno. Observando de nuevo todas nuestras variables, creemos que podría ser interesante probar con la variable "Lifetime Post reach by people who like your Page", ya que esta era una de las variables con mayor correlación.
 
 
 
@@ -1450,6 +1453,8 @@ abline(h = 4/(nrow(train) - length(modelo_facebook$coefficients)), col = "red")
 
 La distancia de Cook permite identificar observaciones que tienen una gran influencia en los resultados del modelo. Valores por encima de la línea roja deben ser investigados.
 
+##Conclusión
+
 
 # Métodos de selección de variables y problemas de regularización 
 
@@ -1593,8 +1598,18 @@ colnames(output1)=c("ELASTIC","LASSO","RIDGE")
 output
 ```
 
+## Conclusión
+
+Creemos que el modelo que deberíamos escoger es Elige Elastic Net.
+
+Motivos:
+  + Nos interesa tener un balance entre eliminar algunas variables irrelevantes (como Lasso) y manejar correlaciones (como Ridge).
+  + El lambda óptimo encontrado (0.03268) sugiere una penalización relativamente suave, lo que evita eliminar en exceso.
+  + Sospechamos que hay multicolinealidad entre las variables predictoras.
 
 
+Sin embargo,si tuviesemos que priorizar la simplicidad extrema y quisiéramos centrarnos en muy pocas variables, Lasso podría ser suficiente.
+Por otro lado, si se prefiriese mantener tantas variables como sea posible sin interpretabilidad prioritaria, Ridge sería mejor opción.
 
 
 # Modelos no lineales (Alonso)
