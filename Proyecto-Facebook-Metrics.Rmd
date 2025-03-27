@@ -338,10 +338,13 @@ ggplot(train, aes(x = Category, fill = Category)) +
 ```
 
 ```{r}
-#enfrentamiento con el target 
-cor(train$`Total Interactions`, train$Category, use="complete.obs")  # Correlación
-plot(train$Category, train$`Total Interactions`, main="Category vs Total Interactions",
-     xlab="Category", ylab="Total Interactions", col="purple", pch=16)
+## Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Category vs Total Interactions",
+       x = "Category",
+       y = "Total Interactions") +
+  theme_minimal()
 ```
 La correlación es baja y positiva. Hay una relación débil entre las interacciones y la categoría, pero no es una correlación fuerte.
 
@@ -372,10 +375,13 @@ ggplot(train, aes(x = factor(`Post Month`))) +
 
 
 ```{r}
-#enfrentamiento con el target 
-cor(train$`Total Interactions`, train$`Post Month`, use="complete.obs")  # Correlación
-plot(train$`Post Month`, train$`Total Interactions`, main="`Post Month` vs Total Interactions",
-     xlab="`Post Month`", ylab="Total Interactions", col="coral1", pch=16)
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Post Month vs Total Interactions",
+       x = "Post Month",
+       y = "Total Interactions") +
+  theme_minimal()
 ```
 
 
@@ -447,10 +453,13 @@ ggplot(train, aes(x = factor(`Post Hour`))) +
 ```
 
 ```{r}
-#enfrentamiento con el target 
-cor(train$`Total Interactions`, train$`Post Hour`, use="complete.obs")  # Correlación
-plot(train$`Post Hour`, train$`Total Interactions`, main="`Post Hour` vs Total Interactions",
-     xlab="`Post Hour`", ylab="Total Interactions", col="#C0FF3E", pch=16)
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Post Hour vs Total Interactions",
+       x = "Post Hour",
+       y = "Total Interactions") +
+  theme_minimal()
 ```
 Los resultados muestran que las publicaciones realizadas entre las 5 AM y 12 PM tienden a generar más interacciones en promedio. En particular, las publicaciones a las 5 AM y 12 PM presentan las medianas más altas, indicando una mayor participación de los usuarios.
 
@@ -1037,7 +1046,7 @@ text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_valu
 **1: Ajustar el modelo de regresión lineal**
 ```{r}
 # Ajustar el modelo de regresión lineal
-modelo <- lm(`Total Interactions` ~ `Lifetime Post Impressions by people who have liked your Page`, data = train_clean)
+modelo2 <- lm(`Total Interactions` ~ `Lifetime Post Impressions by people who have liked your Page`, data = train_clean)
 
 # Obtener estimadores de los parámetros y errores estándar
 estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
@@ -1054,13 +1063,13 @@ En conclusión, el análisis muestra que existe una relación sólida, positiva 
 **2: Resumen del modelo**
 ```{r}
 # Obtener resumen del modelo
-summary(modelo)
+summary(modelo2)
 ```
 
 **3: Tabla ANOVA**
 ```{r}
 # Obtener y mostrar la tabla ANOVA
-tabla_anova <- anova(modelo)
+tabla_anova <- anova(modelo2)
 cat("\nTabla ANOVA:\n")
 print(tabla_anova)
 
@@ -1077,10 +1086,10 @@ Por otro lado, los residuos, con 245 grados de libertad, acumulan una suma de cu
 Gráfico de residuos vs. valores ajustados
 ```{r}
 # Obtener los residuos
-residuos <- resid(modelo)
+residuos <- resid(modelo2)
 
 # 1. Gráfico de residuos vs. valores ajustados
-valores_ajustados <- fitted(modelo)
+valores_ajustados <- fitted(modelo2)
 plot(valores_ajustados, residuos,
      main = "Residuos vs Valores Ajustados",
      xlab = "Valores Ajustados",
@@ -1154,7 +1163,7 @@ El gráfico muestra la relación entre los residuos y la variable independiente.
 Prueba de homocedasticidad (Breusch-Pagan):
 
 ```{r}
-breusch_pagan <- bptest(modelo)
+breusch_pagan <- bptest(modelo2)
 cat("\nPrueba de Breusch-Pagan para homocedasticidad:\n")
 print(breusch_pagan)
 
@@ -1165,7 +1174,7 @@ Dado que el p-value (0.009855) es menor que un nivel de significancia típico (�
 Prueba de autocorrelación (Durbin-Watson):
 ```{r}
 # Prueba Durbin-Watson para autocorrelación de los residuos
-durbin_watson <- dwtest(modelo)
+durbin_watson <- dwtest(modelo2)
 cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
 print(durbin_watson)
 
@@ -1178,10 +1187,10 @@ El valor del estadístico DW cercano a 2 sugiere ausencia de autocorrelación si
 **Paso 6: Leverage y observaciones influyentes**
 ```{r}
 # Calcular leverage
-leverage <- hatvalues(modelo)
+leverage <- hatvalues(modelo2)
 
 # Umbral para leverage alto
-p <- length(coef(modelo))  # Número de parámetros (incluyendo el intercepto)
+p <- length(coef(modelo2))  # Número de parámetros (incluyendo el intercepto)
 n <- nrow(train)  # Número de observaciones
 leverage_threshold <- 2 * p / n
 
@@ -1220,13 +1229,13 @@ Estas observaciones tienen un leverage superior al umbral de 0.016, lo que indic
 **Paso 7: Distancia de Cook, DFBETAS y DFFITS**
 ```{r}
 # 1. Calcular Distancia de Cook
-cooks_distance <- cooks.distance(modelo)
+cooks_distance <- cooks.distance(modelo2)
 
 # 2. Calcular DFBETAS
-dfbetas_values <- dfbetas(modelo)
+dfbetas_values <- dfbetas(modelo2)
 
 # 3. Calcular DFFITS
-dffits_values <- dffits(modelo)
+dffits_values <- dffits(modelo2)
 
 # Umbrales sugeridos
 cooks_threshold <- 4 / n  # Umbral para Distancia de Cook
@@ -1457,7 +1466,7 @@ Y <- train_clean$`Total Interactions`
 
 #----------------------------------
 
-# Primero, excluimos las variables "Total Interactions", "comment", "like" y "share"
+# Primero, excluimos las variables "comment", "like" y "share"
 train_clean_filtered <- train_clean[, !names(train_clean) %in% c("comment", "like", "share")]
 
 # Realizamos el one-hot encoding para las variables categóricas
@@ -1565,45 +1574,13 @@ print(lambda_optimo_n)
 modelo_elastic_final <- glmnet(X1, Y, alpha = 0.5, lambda = lambda_optimo_n)
 
 # Mostrar coeficientes
-output=cbind(round(coef(modelo_elastic_final),3),output)
+output1=cbind(round(coef(modelo_elastic_final),3),output)
 
-colnames(output)=c("ELASTIC","LASSO","RIDGE","OLS")
+colnames(output1)=c("ELASTIC","LASSO","RIDGE")
 
 output
 ```
 
-
-
-## Comparar modelos
-
-```{r}
-# Ajustar modelo Ridge, Lasso y Elastic Net y almacenar los coeficientes
-coef_ridge <- coef(modelo_ridge_final)
-coef_lasso <- coef(modelo_lasso_final)
-coef_elastic <- coef(modelo_elastic_final)
-coef_ols <- coef(modelo_lm)
-
-# Convertir coeficientes a un formato de dataframe
-coef_ridge_df <- as.data.frame(as.matrix(coef_ridge))
-coef_lasso_df <- as.data.frame(as.matrix(coef_lasso))
-coef_elastic_df <- as.data.frame(as.matrix(coef_elastic))
-coef_ols_df <- as.data.frame(as.matrix(coef_ols))
-
-# Asegurarse de que todos tengan las mismas columnas (variables)
-# Añadir las columnas de coeficientes de los modelos faltantes si es necesario
-# Asumimos que las variables de X1 son las mismas para todos los modelos
-
-# Unificar las columnas de coeficientes con la misma cantidad de filas (variables)
-all_coefs <- data.frame(
-  RIDGE = coef_ridge_df[,1], 
-  LASSO = coef_lasso_df[,1], 
-  ELASTIC = coef_elastic_df[,1],
-  OLS = coef_ols_df[,1]
-)
-# Asignar nombres a las columnas
-colnames(all_coefs) <- c("RIDGE", "LASSO", "ELASTIC", "OLS")
-
-```
 
 
 
