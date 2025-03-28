@@ -32,6 +32,12 @@ library(glmnet)
 -   **Lucía Arnaldo Cuevas**
 -   **Alonso Rescalvo Casas**
 
+El trabajo ha sido repartido de la siguiente manera:
+- EDA: Cristina, Lucía y Alonso
+- Modelos de regresión lineal: Cristina y Lucía
+- Métodos de selección de variables y problemas de regularización: Cristina y Lucía
+- Modelos no lineales: Alonso
+
 Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
 
 ```{r lectura, warning=FALSE}
@@ -1791,7 +1797,7 @@ Aunque hay una tendencia general positiva entre Total Interactions y comment, la
 Se nota mucha variabilidad para valores bajos y medios de Total Interactions, lo que sugiere que un polinomio de segundo grado no es suficiente para capturar la relación real.
 
 
-# Modelos de Regresión Exponencial y Logarítmica
+## Modelos de Regresión Exponencial y Logarítmica
 ```{r}
 # Asegurar que los valores de 'Total Interactions' sean positivos para aplicar logaritmo
 train$`Total Interactions`[train$`Total Interactions` <= 0] <- 
@@ -1820,7 +1826,7 @@ lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
 Como podemos observar , la regresion exponencial no se ajusta muy bien en cuanto los likes van aumentando esto lo que indica es  que el modelo sobrestima las Total Interactions cuando like es muy alto.
 
 
-# Regresion spline
+## Regresion spline
 ```{r}
 # Cargar librería para splines
 library(splines)
@@ -1846,9 +1852,9 @@ lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
 ```
 Como nos muestra el gráfico podemos ver que la regresión spline se intenta ajustar a los modelos de una manera mas precisa ajustandose a los saltos de la variable.
 
-# Transformación de variables
+## Transformación de variables
 
-## Transformación logaritmica
+### Transformación logaritmica
 ```{r}
 # Modelo lineal con transformación logarítmica de la variable objetivo
 modelo_log <- lm(log(train$`Total Interactions`) ~ like + comment + share, data = train)
@@ -1870,7 +1876,7 @@ lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
 En este caso no mejora el ajuste del modelo de forma significativa. La gran dispersión de los datos sugiere que:
 El número de like no es un predictor fuerte por sí solo.
 
-# Transformación de Raíz cuadrada
+### Transformación de Raíz cuadrada
 ```{r}
 # Ajuste del modelo con transformación raíz cuadrada en la variable dependiente
 modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ like, data = train)
@@ -1895,7 +1901,7 @@ modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ comment, data = train)
 ```
 No logra ajustarse adecuadamente a la variabilidad de los datos. La línea de predicción subestima muchos valores y no capta la dispersión creciente. Por tanto, esta transformación no mejora significativamente el modelo respecto al ajuste lineal simple.
 
-# Transformación de Box-Cox
+### Transformación de Box-Cox
 ```{r}
 # Cargar librería necesaria
 library(MASS)
@@ -1921,8 +1927,6 @@ Además, la curva del log-likelihood muestra un pico muy claro en λ = 1, y el i
 Por lo tanto las tranformaciones anterioeres podemos decir que son innecesarias.
 
 
-# INGENIERÍA DE CARACTERÍSTICAS
-
 ## Creación de una nueva variable. Variable de interacción
 ```{r}
 
@@ -1946,7 +1950,7 @@ Like y share son altamente significativos (p < 2e-16) y contribuyen de forma pos
 La interacción like_share_interaccion también es significativa (p ≈ 2.84e-09), lo que quiere decir  que el efecto de los “likes” en Total Interactions varía según el número de “shares” (y viceversa).
 Otra observacion que podemos ver es que el intercept no es significativo (p = 0.154), pero eso no afecta la utilidad predictiva si el resto del modelo es sólido.
 
-# Selección y reduccion de variables
+## Selección y reduccion de variables
 
 ```{r}
 # Cargar librería
@@ -1974,7 +1978,7 @@ El modelo final ajusta Total Interactions usando solo 4 variables:
 comment, like, share, like_share_interaccion
 Aqui se ha confirmado que like, share y comment son las variables más relevantes para explicar Total Interactions.
 
-# Evaluar mejoras con métricas
+## Evaluar mejoras con métricas
 ```{r}
 # Ver métrica para cada modelo
 
