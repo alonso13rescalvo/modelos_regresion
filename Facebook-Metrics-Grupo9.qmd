@@ -125,25 +125,7 @@ Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como
 **¿Es posible identificar la distribución que siguen las variables?** (Cristina)
 Sí, se puede hacer con gráficos y pruebas estadísticas como: + Histogramas para visualizar la forma de la distribución. + Boxplots para detectar outliers y asimetrías. + Q-Q Plots para comparar con una distribución normal. + Pruebas estadísticas como Shapiro-Wilk o Kolmogorov-Smirnov para evaluar normalidad.
 
-**¿Existe correlación entre variables?** (Cristina)
 
-Esto se puede comprobar de la siguiente manera:
-```{r}
-# Seleccionar solo variables numéricas
-numeric_vars <- train[, sapply(train, is.numeric)]
-
-# Calcular la matriz de correlación
-cor_matrix <- cor(numeric_vars, use = "complete.obs")
-
-# Renombrar las variables con nombres más cortos
-colnames(cor_matrix) <- c("1", "2", "3", "4","5", "6", "7", "8","9", "10", "11", "12","13", "14", "15", "16", "17", "18" )  # Edita según tus variables
-rownames(cor_matrix) <- colnames(cor_matrix)  # Para que las filas tengan el mismo nombre
-
-# Crear heatmap con nombres cortos
-pheatmap(cor_matrix, display_numbers = TRUE, 
-         color = colorRampPalette(c("#98F5FF", "white", "#AB82FF"))(50))
-
-```
 
 ## Partición de los datos (Cristina)
 
