@@ -1764,7 +1764,7 @@ Por otro lado, si se prefiriese mantener tantas variables como sea posible sin i
 
 
 # Modelos no lineales
-## Modelo polinómica
+## Modelo polinómico
 
 ```{r}
 # Cargar librerías necesarias
@@ -1794,7 +1794,7 @@ lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
 
 ```
 Aunque hay una tendencia general positiva entre Total Interactions y comment, la línea roja (modelo) no se ajusta bien a la dispersión de los datos.
-Se nota mucha variabilidad para valores bajos y medios de Total Interactions, lo que sugiere que un polinomio de segundo grado no es suficiente para capturar la relación real.
+Se nota mucha variabilidad para valores bajos y medios de Total Interactions, lo que nos quiere decir que un polinomio de segundo grado no es suficiente para capturar la relación real.
 
 
 ## Modelos de Regresión Exponencial y Logarítmica
@@ -1926,29 +1926,22 @@ Otras transformaciones (como logarítmica, raíz cuadrada, inversa) no mejorarí
 Además, la curva del log-likelihood muestra un pico muy claro en λ = 1, y el intervalo de confianza del 95% (las líneas punteadas horizontales) incluye ese valor.
 Por lo tanto las tranformaciones anterioeres podemos decir que son innecesarias.
 
-
+# Ingeniería de características
 ## Creación de una nueva variable. Variable de interacción
 ```{r}
 
 # Crear nueva variable de interacción
-train$like_share_interaccion <- train$like * train$share
+train$lifetime_share_interaccion <- train$`Lifetime Post Total Impressions` * train$share
 
 # Ajustar modelo con interacción
-modelo_interaccion <- lm(train$`Total Interactions` ~ like + share + like_share_interaccion, data = train)
+modelo_interaccion <- lm(train$`Total Interactions` ~ `Lifetime Post Total Impressions` + share + lifetime_share_interaccion, data = train)
 
 # Ver resumen del modelo
 summary(modelo_interaccion)
 
 
 ```
-
-Acerca del modelo de interacción:
-R² = 0.998 y R² ajustado = 0.998, lo que indica que el modelo explica el 99.8% de la variabilidad en Total Interactions.
-Error estándar residual ≈ 10.39, bastante bajo.
-p-valor global < 2.2e-16, lo que indica que el modelo es muy significativo.
-Like y share son altamente significativos (p < 2e-16) y contribuyen de forma positiva al número total de interacciones.
-La interacción like_share_interaccion también es significativa (p ≈ 2.84e-09), lo que quiere decir  que el efecto de los “likes” en Total Interactions varía según el número de “shares” (y viceversa).
-Otra observacion que podemos ver es que el intercept no es significativo (p = 0.154), pero eso no afecta la utilidad predictiva si el resto del modelo es sólido.
+El modelo que incluye la interacción entre Lifetime Post Total Impressions y share logra un R² ajustado de 0.6934, explicando aproximadamente el 69% de la variabilidad en Total Interactions. Las variables principales son significativas, pero la interacción no lo es (p = 0.28583), lo que sugiere que no aporta valor adicional al modelo. Además, el error estándar residual (130.2) es alto, indicando que el ajuste es inferior a otros modelos que hemos evaluado.
 
 ## Selección y reduccion de variables
 
@@ -1963,20 +1956,17 @@ modelo_completo <- lm(`Total Interactions` ~
   `Lifetime Engaged Users` + `Lifetime Post Consumers` + `Lifetime Post Consumptions` +
   `Lifetime Post Impressions by people who have liked your Page` +
   `Lifetime Post reach by people who like your Page` +
-  `Lifetime People who have liked your Page and engaged with your post` +
-  comment + like + share + like_share_interaccion,
+  `Lifetime People who have liked your Page and engaged with your post`,
   data = train_limpio)
 
 # Aplicar selección stepwise en ambas direcciones
 modelo_stepwise <- step(modelo_completo, direction = "both")
-
+  
 # Mostrar resumen del modelo seleccionado
 summary(modelo_stepwise)
 
 ```
-El modelo final ajusta Total Interactions usando solo 4 variables:
-comment, like, share, like_share_interaccion
-Aqui se ha confirmado que like, share y comment son las variables más relevantes para explicar Total Interactions.
+Lo hemos hecho eliminando share , like y comment ya que la suma de estas es Total interactions , que es nuestro target. Y por tanto quedaría perfecto , y no nos aportaria nada al modelo.Lifetime Post Total Reach, Lifetime Post Total Impressions,Lifetime Engaged Users,Lifetime Post Consumers, podemos ver que son las que mas significancia tienen respecto a la variable respuesta .
 
 ## Evaluar mejoras con métricas
 ```{r}
@@ -2036,10 +2026,9 @@ cat("RMSE:", rmse(modelo_interaccion), "\n\n")
 
 
 ```
-El modelo stepwise es el mejor: preciso, robusto y equilibrado.
-Los modelos logarítmico y raíz cuadrada presentan mejor RMSE que el lineal, pero con menor R², por lo que son útiles si se prioriza estabilidad en valores bajos.
-El modelo spline, aunque sea  flexible, no funciona bien en este nuestra caso.
 
+
+El modelo lineal simple (Total Interactions ~ like + share + comment) es el más eficiente y equilibrado, con excelente capacidad explicativa y bajo error. El modelo stepwise, aunque competitivo, no supera su rendimiento. El spline, logarítmico, y polinómico no son los más adecuados en nuestro contexto.Tras realizar los modelos queda claro que el modelo lineal simple era el mejor ya que lo hemos hecho con la variable like , que forma parrte de la suma de lo que vale Total interactions, que es la suma de like , comment y share . Los demás modelos los hemos hecho con variables diferentes ya que si lo hacemos con esas variables , pues obviamente van a quedar perfectos pero no nos aportarian nada que no sepamos al modelo.
 
 
   
