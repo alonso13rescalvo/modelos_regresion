@@ -2032,5 +2032,16 @@ cat("RMSE:", rmse(modelo_interaccion), "\n\n")
 El modelo lineal simple (Total Interactions ~ like + share + comment) es el más eficiente y equilibrado, con excelente capacidad explicativa y bajo error. El modelo stepwise, aunque competitivo, no supera su rendimiento. El spline, logarítmico, y polinómico no son los más adecuados en nuestro contexto.Tras realizar los modelos queda claro que el modelo lineal simple era el mejor ya que lo hemos hecho con la variable like , que forma parrte de la suma de lo que vale Total interactions, que es la suma de like , comment y share . Los demás modelos los hemos hecho con variables diferentes ya que si lo hacemos con esas variables , pues obviamente van a quedar perfectos pero no nos aportarian nada que no sepamos al modelo.
 
 
+
+## Conclusión
+
+Después de haber probado distintos tipos de modelos y transformaciones, llegamos a la conclusión de que el modelo lineal simple, usando las variables like, share y comment, es el que mejor resultado nos da. Tiene un R² ajustado muy alto (casi 0.99) y un error muy bajo, lo que significa que predice muy bien la variable Total Interactions. Esto era esperable, ya que estas tres variables son justamente las que componen la variable objetivo, así que su relación es directa.
+
+Probamos también modelos más complejos como el polinómico y el spline, pero no mejoraron los resultados. De hecho, el modelo spline tuvo errores muy grandes y no fue útil. El modelo polinómico tampoco se ajustó bien, sobre todo en zonas donde había mucha dispersión.
+
+En cuanto a las transformaciones (logarítmica, raíz cuadrada y Box-Cox), vimos que no aportaban ninguna mejora real al modelo. El gráfico de Box-Cox incluso nos indicó que no hacía falta transformar la variable dependiente. Además, los modelos transformados explicaban menos y cometían más errores.
+
+Intentamos crear variables de interacción para ver si podían mejorar el ajuste, pero en nuestro caso no fueron significativas, por lo que tampoco ayudaron. Finalmente, probamos con la selección automática de variables (stepwise), y aunque el modelo resultante fue bastante bueno, no supera al modelo lineal simple en precisión. Es algo que ya nos podiamos percatar ya que al enfrentar las variables con el target se veia una relación lineal bastante clara.
+
   
 
