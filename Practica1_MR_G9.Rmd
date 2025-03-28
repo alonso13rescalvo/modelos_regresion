@@ -1492,6 +1492,7 @@ Usaremos validación cruzada k-fold para evaluar la capacidad predictiva del mod
 
 ```{r}
 library(caret)
+set.seed(123)
 
 # Configuración de la validación cruzada de 10-fold
 control <- trainControl(method = "cv", number = 10)
@@ -1510,11 +1511,11 @@ La salida muestra métricas como el RMSE (Root Mean Squared Error) y el R², que
 
 En este caso vemos que el tamaño de las muestras en cada iteración varía ligeramente entre 222 y 223 observaciones.
 
-R² = 0.8850409 significa que el 88.5% de la variabilidad en las interacciones es explicada por las variables incluidas en el modelo. Esto sugiere un modelo bastante fuerte, aunque no perfecto.
+R² = 0.9157515 significa que el 91,57% de la variabilidad en las interacciones es explicada por las variables incluidas en el modelo. Esto sugiere un modelo bastante fuerte, aunque no perfecto.
 
-RMSE representa el error promedio en la prediccion. En este caso, RMSE = 71.69574 indica que la predicción del número total de interacciones tiene una desviación de aproximadamente 72 interacciones respecto a los valores reales.
+RMSE representa el error promedio en la prediccion. En este caso, RMSE = 63.44806 indica que la predicción del número total de interacciones tiene una desviación de aproximadamente 63 interacciones respecto a los valores reales.
 
-MAE representa el error absoluto medio. Tenemos un MAE = 40.91904, lo que indica que el modelo se equivoca por aproximadamente 41 interacciones al predecir.
+MAE representa el error absoluto medio. Tenemos un MAE = 38.92529, lo que indica que el modelo se equivoca por aproximadamente 39 interacciones al predecir.
 `
 
 ### 4: Análisis de residuos
