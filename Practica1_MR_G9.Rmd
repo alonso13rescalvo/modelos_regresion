@@ -1726,29 +1726,29 @@ La salida muestra los coeficientes estimados por el modelo Lasso ajustado. Las v
 
 Variables seleccionadas (con coeficientes distintos de cero):
 
-  - TypePhoto: -14.33 → Publicar fotos tiene un impacto negativo en la variable objetivo.
+  - TypePhoto: -16.56 → Publicar fotos tiene un impacto negativo en la variable objetivo.
   
-  - TypeStatus: -45.39 → Publicar solo un estado reduce considerablemente la respuesta esperada.
+  - TypeStatus: -46.73 → Publicar solo un estado reduce considerablemente la respuesta esperada.
   
-  - TypeVideo: +16.24 → Publicar videos tiene un impacto positivo significativo.
+  - TypeVideo: +19.30 → Publicar videos tiene un impacto positivo significativo.
   
-  - Category2 y Category3: +25.63 y +24.36 → Estas categorías específicas también contribuyen positivamente.
+  - Category2 y Category3: +25.09 y +23.70 → Estas categorías específicas también contribuyen positivamente.
   
-  - Paid: +8.92 → Realizar publicaciones pagadas mejora la respuesta esperada.
+  - Paid: +8.99 → Realizar publicaciones pagadas mejora la respuesta esperada.
   
-  - Lifetime Engaged Users: +1.16 → Incrementos en esta métrica aumentan la respuesta del modelo.
+  - Lifetime Engaged Users: +1.18 → Incrementos en esta métrica aumentan la respuesta del modelo.
   
-  - Lifetime Post Impressions by people who have liked your Page: +0.000578 → Pequeño impacto positivo.
+  - Lifetime Post Impressions by people who have liked your Page: +0.000526 → Pequeño impacto positivo.
   
-  - Lifetime Post reach by people who like your Page: +0.000314 → Contribución positiva, aunque mínima.
+  - Lifetime Post reach by people who like your Page: +0.000294 → Contribución positiva, aunque mínima.
 
-  - Lifetime Post Total Reach y Lifetime Post Total Impressions: -0.0013 y +0.00019 respectivamente, mostrando ligeros efectos opuestos.
+  - Lifetime Post Total Reach y Lifetime Post Total Impressions: -0.00144 y +0.000239 respectivamente, mostrando ligeros efectos opuestos.
 
-  - Post Month: -1.20 → Publicaciones en ciertos meses pueden tener un leve impacto negativo.
+  - Post Month: -1.49 → Publicaciones en ciertos meses pueden tener un leve impacto negativo.
   
-  Resumidamente, nos quedamos con: Type, Category, Paid, Lifetime Engaged Users, Lifetime Post Impressions by people who have liked your Page, Lifetime Post reach by people who like your Page y Post Month.
+El modelo Lasso selecciona principalmente variables relacionadas con el tipo de publicación (Type), la categoría, el hecho de si la publicación fue pagada (Paid) y varias métricas de interacción y alcance como Lifetime Engaged Users y Lifetime Post Impressions by people who have liked your Page.
 
-Variables como Post Weekday, Post Hour, Lifetime Post Consumptions, y Lifetime People who have liked your Page and engaged with your post han sido eliminadas por su baja relevancia predictiva según el modelo Lasso.
+Por otro lado, variables como Post Weekday, Post Hour, Lifetime Post Consumptions, y Lifetime People who have liked your Page and engaged with your post, han sido descartadas por su baja relevancia predictiva según el modelo.
 
 ## Elastic Net
 La regresión Elastic Net es una técnica de regularización que combina las propiedades de Ridge y Lasso. Permite controlar simultáneamente la reducción de la magnitud de los coeficientes y la eliminación de variables irrelevantes.
