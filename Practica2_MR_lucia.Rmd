@@ -2073,7 +2073,7 @@ Intentamos crear variables de interacción para ver si podían mejorar el ajuste
 # Otros mdelos de regresión
 Los Modelos Aditivos Generalizados (GAMs) permiten capturar relaciones no lineales entre la variable dependiente y las variables independientes. 
 
-Las funciones de suavizado permiten modelar relaciones no lineales de manera flexible y controlada, evitando el sobreajuste. En los GAMs, las funciones de suavizado se implementan comúnmente mediante splines
+Las funciones de suavizado permiten modelar relaciones no lineales de manera flexible y controlada, evitando el sobreajuste. En los GAMs, las funciones de suavizado se implementan comúnmente mediante splines.
 
 Ajuste de un GAM con Splines
 ```{r}
@@ -2093,7 +2093,7 @@ Interpretamos los resultados obtenidos con summary.
 
 En primer lugar, el edf indica el grado de flexibilidad del suavizado. s(like) tiene un edf = 8.459, lo que indica que la relación entre las variables es no lineal (ya que es mayor que 1). 
 
-El p-valor indica  si la función suavizada para este predictor es significativa. Tenemos que el p-valor < 2e-16. Como p-valor < 0.05, la relación entre el predictor y la variable dependiente es estadísticamente significativa. Esto tiene sentido ya que 'Total Interactions' es la suma de like, share y comment.
+El p-valor indica  si la función suavizada para este predictor es significativa. Tenemos que el p-valor < 2e-16. Como p-valor < 0.05, podemos rechazar la hipótiesis nula y concluir que la relación entre el predictor (like) y la variable dependiente (Total interactions) es estadísticamente significativa. Esto tiene sentido ya que 'Total Interactions' es la suma de like, share y comment.
 
 ```{r}
 # Visualización de la función suavizada
@@ -2111,7 +2111,7 @@ plot(modelo_gam,
 Evaluación del ajuste de un GAM
 ```{r}
 # Verificar la deviance explicada y el AIC
-cat("Deviance Explicada:", summary(modelo_gam)$dev.expl, "\n")
+cat("Deviance explained:", summary(modelo_gam)$dev.expl, "\n")
 cat("AIC del Modelo:", AIC(modelo_gam), "\n")
 ```
 
@@ -2126,6 +2126,50 @@ par(mfrow = c(2, 2))
 gam.check(modelo_gam)
 ```
 
+El Q-Q Plot (arriba izquierda) compara los residuos del modelo con una distribución normal. La línea roja es lo que se esperaría bajo normalidad y lo negro son los residuos del modelo. Vemos que en los residuos hay una curvatura, lo que indica que nos residuos no son normales.
+
+En el gráfico de resids vs linear pred (arriba derecha), vemos que hay cierta forma de embudo, los residuos son más dispersos a medida que aumenta la predicción. Esto indica posible heterocedasticidad. 
+
+El histograma (abajo izquierda) nos ayuda a ver cómo de distribuyen los residuos. Refuerza lo visto en el Q-Q plot, no hay una normalidad perfecta.
+
+Por último, el gráfico response vs Fitted Values (abajo derecha) muestra si el modelo está capturando la tendencia general de la respuesta. Buscamos una diagonal. Vemos que los puntos se alinean, pero hay mucha dispersión a medida que suben los valores ajustados. Esto implica que el modelo tiene mejor ajuste en el rango bajo de 'Total Interactions', pero le cuesta con los valores altos.
+
+
+```{r}
+library(mgcv)
+library(cvTools)
+
+# Asignar variables con nuevos nombres
+x1 <- train_clean2$like
+y1 <- train_clean2$Total.Interactions
+n1 <- length(y1)
+
+# Configuración de validación cruzada 5-fold
+set.seed(123)
+folds <- cvFolds(n = n1, K = 5)
+
+# Inicializar vector de errores
+errores <- numeric(5)
+
+# Validación cruzada
+for (i in 1:5) {
+  test_idx <- which(folds$which == i)
+  train_idx <- setdiff(1:n1, test_idx)
+  
+  modelo_gam_cv <- gam(y1 ~ s(x1), data = data.frame(x1 = x1[train_idx], y1 = y1[train_idx]), method = "REML")
+  predicciones <- predict(modelo_gam_cv, newdata = data.frame(x1 = x1[test_idx]))
+  
+  errores[i] <- sqrt(mean((y1[test_idx] - predicciones)^2))  # RMSE
+}
+
+# Resultado final
+error_promedio <- mean(errores)
+cat("Error Promedio (RMSE) de la Validación Cruzada:", error_promedio)
+```
+Un RMSE de 24.47838 indica que, en promedio, el modelo se equivoca por alrededor de 24 interacciones cuando predice el número total de interacciones de una publicación. Es un error bastante bajo, lo que sugiere que es un buen modelo.
+
+
+Como 'Total Interactions' es la suma de 'like' 'comment' y 'share', vamos a probar el modelo con otra de las variables, para ver si el modelo sigue siendo bueno.
 ```{r}
 # Ajuste del modelo GAM usando splines cúbicos con la variable 'Lifetime Post reach by people who like your Page'
 modelo_gam2 <- gam(Total.Interactions ~ s(Lifetime.Post.reach.by.people.who.like.your.Page), data = train_clean2, method = "REML")
@@ -2135,7 +2179,7 @@ summary(modelo_gam2)
 ```
 En este caso, el edf es 7.729, lo que indica que de nuevo la relación entre las variables es no lineal (ya que es mayor que 1).
 
-En cuanto al p-valor, tenemos que el p-valor < 2e-16. Como p-valor < 0.05, la relación entre el predictor y la variable dependiente es estadísticamente significativa, en este caso entre 'Total interactions' y 'Lifetime Post reach by people who like your Page'
+En cuanto al p-valor, tenemos que el p-valor < 2e-16. Como p-valor < 0.05, rechazamos la hipótesis nula y podemos concluir que la relación entre el predictor y la variable dependiente es estadísticamente significativa, en este caso entre 'Total interactions' y 'Lifetime Post reach by people who like your Page'
 
 ```{r}
 # Visualización de la función suavizada
@@ -2154,7 +2198,7 @@ plot(modelo_gam2,
 Evaluación del ajuste de un GAM
 ```{r}
 # Verificar la deviance explicada y el AIC
-cat("Deviance Explicada:", summary(modelo_gam2)$dev.expl, "\n")
+cat("Deviance explained:", summary(modelo_gam2)$dev.expl, "\n")
 cat("AIC del Modelo:", AIC(modelo_gam2), "\n")
 ```
 El Deviance explained es de 0.6092445, lo que sugiere que el modelo captura la variabilidad de los datos, pero no de una forma tan buena como en el caso anterior.
@@ -2167,8 +2211,48 @@ par(mfrow = c(2, 2))
 gam.check(modelo_gam2)
 ```
 
+En el Q-Q Plot (arriba izquierda) los puntos se desvían de la línea recta (línea roja), especialmente en las colas. Esto indica que los residuos no siguen una distribución normal.
+
+En el gráfico de resids vs linear pred (arriba derecha), al igual que antes vemos que hay cierta forma de embudo, la dispersión de los residuos aumenta con el valor del predictor lineal. Esto indica posible heterocedasticidad. 
+
+El histograma (abajo izquierda) nos ayuda a ver cómo de distribuyen los residuos. Aunque tiene cierta simetría, hay una cola hacia la derecha, lo que refuerza la idea de que la distribución no es normal. Esto coincide con lo observado en el Q-Q plot.
+
+Por último, el gráfico response vs Fitted Values (abajo derecha) muestra si el modelo está capturando la tendencia general de la respuesta. La relación no sigue una línea clara ni una forma sistemática. Hay alta dispersión y evidencia de valores extremos (outliers)
+
+```{r}
+library(mgcv)
+library(cvTools) 
 
 
+# Extraer variables directamente del data frame
+x <- train_clean2$Lifetime.Post.reach.by.people.who.like.your.Page
+y <- train_clean2$Total.Interactions
+n <- length(y)
+
+# Configuración de la validación cruzada 5-fold
+set.seed(123)
+folds <- cvFolds(n = n, K = 5)
+
+# Inicializar vector para errores
+errores <- numeric(5)
+
+# Validación cruzada
+for (i in 1:5) {
+  test_idx <- which(folds$which == i)
+  train_idx <- setdiff(1:n, test_idx)
+  
+  modelo_gam_cv <- gam(y ~ s(x), data = data.frame(x = x[train_idx], y = y[train_idx]), method = "REML")
+  predicciones <- predict(modelo_gam_cv, newdata = data.frame(x = x[test_idx]))
+  
+  errores[i] <- sqrt(mean((y[test_idx] - predicciones)^2))  # RMSE
+}
+
+# Resultado final
+error_promedio <- mean(errores)
+cat("Error Promedio (RMSE) de la Validación Cruzada:", error_promedio)
+```
+
+Un RMSE de 183.3781 indica que, en promedio, este modelo se equivoca por alrededor de 183 interacciones cuando predice el número total de interacciones de una publicación. La mayoría de observaciones tienen entre o y 260 interacciones totales, por lo que un error de 183 es bastante alto, lo que indica que no es un buen modelo.
 
 
 # Comparación y evaluación de modelos
