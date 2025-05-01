@@ -2066,5 +2066,350 @@ En cuanto a las transformaciones (logarítmica, raíz cuadrada y Box-Cox), vimos
 
 Intentamos crear variables de interacción para ver si podían mejorar el ajuste, pero en nuestro caso no fueron significativas, por lo que tampoco ayudaron. Finalmente, probamos con la selección automática de variables (stepwise), y aunque el modelo resultante fue bastante bueno, no supera al modelo lineal simple en precisión. Es algo que ya nos podiamos percatar ya que al enfrentar las variables con el target se veia una relación lineal bastante clara.
 
+
+# PARTE 2
+
+# Modelos de Regresión Generalizada
+
+Para casos en los que la variable dependiente es binaria o representa se utilizan los Modelos Lineales Generalizados (GLM), que permiten trabajar con distintos tipos de variables dependientes y distribuciones, como la binomial, Poisson o gamma.
+
+Los GLM amplían la regresión lineal incorporando funciones de enlace, lo que permite modelar relaciones más flexibles. Algunos modelos comunes incluyen:
   
+  + Regresión logística: para variables binarias.
+
+  + Regresión de Poisson: para datos de conteo.
+
+  + Regresión binomial negativa: para conteos con sobredispersión.
+
+  + Modelos con distribución gamma: para variables continuas y positivas.
+  
+
+En este análisis, vamos a utilizar la regresión logística y la de Poisson. 
+
+No vamos a aplicar la regresión Gamma, ya que si bien es útil para variables positivas y sesgadas, está pensada para datos continuos, como tiempos o montos de dinero. Dado que nuestras interacciones son valores discretos (conteos), este modelo no es el más apropiado.
+
+Por la misma razón descartamos la regresión Inversa Gaussiana, ya que se utiliza principalmente para modelar tiempos hasta eventos con ciertas propiedades de dispersión, lo cual no corresponde a nuestro caso, ni se ajusta al tipo de variable que estamos modelando.
+
+
+
+
+## Modelo de regresión Logística
+
+En este análisis, vamos a utilizar la regresión logística. esta técnica está diseñada para problemas de clasificación binaria, donde la variable dependiente solo puede tomar dos valores. En nuestro caso, la variable de interés —Total Interactions— es numérica, positiva y entera, por lo tanto, tenemos que dividirla.
+
+Puesto que nuestra variable objetivo se ve asi:
+```{r}
+#Histograma(Para ver la forma de la distribución):
+
+ggplot(train, aes(x = `Total Interactions`)) +
+  geom_histogram(binwidth = 50, fill = "lightblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribución del Target (Total Interactions)", x = "Total Interactions", y = "Frecuencia")
+
+```
+```{r}
+table(train_modelo_logistico$popular)
+```
+
+
+Por estas razones hemos optado por dividirlos a partir de 275 interacciones.
+
+```{r}
+train_modelo_logistico <- na.omit(train)
+# Crear variable binaria: 1 si Total_Interactions > 275, 0 si no
+train_modelo_logistico$popular <- ifelse(train_modelo_logistico$`Total Interactions` > 275, 1, 0)
+# Quitar la columna 'Total Interactions' del dataset de entrenamiento
+train_modelo_logistico <- subset(train_modelo_logistico, select = -`Total Interactions`)
+
+
+```
+
+
+### 1. Ajuste del modelo de Regresión de Poisson
+Ajustamos un modelo de regresión logística para predecir si una publicación será popular (más de 400 interacciones) usando like, share y comment como variables predictoras.
+
+```{r}
+# Ajuste del modelo de regresión logística
+modelo_logistico <- glm(popular ~ ., data = train_modelo_logistico, family = binomial)
+
+
+# Resumen del modelo
+summary(modelo_logistico)
+
+```
+
+
+Al analizar los resultados del ajuste del modelo de regresión logística, observamos que ninguna de las variables predictoras resulta estadísticamente significativa, ya que todos los valores p son iguales a 1. Esto implica que, según este modelo y los datos disponibles, no se puede establecer una relación significativa entre las variables independientes y la popularidad de una publicación.
+
+A pesar de que el modelo muestra una deviance residual extremadamente baja y un AIC también bajo —lo que en otros contextos podría interpretarse como un buen ajuste—, estos resultados son engañosos. La advertencia de que el algoritmo no ha convergido, junto con los errores estándar desproporcionadamente altos y los valores estimados extremos, sugiere la presencia de problemas graves en el ajuste del modelo, como sobreajuste (overfitting), multicolinealidad entre predictores o una inadecuada escala y codificación de las variables.
+
+En resumen, aunque el modelo se ha ajustado sin errores técnicos críticos, los resultados no son estadísticamente confiables ni interpretables. Sería recomendable revisar la calidad de los datos, eliminar o transformar variables redundantes, y considerar técnicas de regularización (como Ridge o Lasso), así como modelos alternativos más robustos o con menos sensibilidad a la colinealidad, para mejorar tanto la capacidad predictiva como la interpretación del modelo.
+
+  
+  
+
+### 2. Selección de variables
+
+
+
+
+
+```{r}
+# Selección stepwise
+modelo_stepwise <- suppressWarnings(step(modelo_logistico, direction = "both", trace = 0))
+
+
+# Resumen del modelo optimizado
+summary(modelo_stepwise)
+
+```
+Tras aplicar un proceso de selección de variables mediante el método stepwise, el modelo de regresión logística se simplificó significativamente, conservando únicamente dos variables predictoras: Post Month y like. Esta reducción buscaba mejorar la eficiencia del modelo eliminando variables irrelevantes o redundantes.
+
+Sin embargo, los resultados del modelo optimizado muestran que ninguna de las variables retenidas es estadísticamente significativa (valores de p = 0.986), lo cual indica que no se puede afirmar con confianza que estas variables estén asociadas con la popularidad de una publicación. Además, los errores estándar de los coeficientes son inusualmente altos, lo que sugiere inestabilidad en las estimaciones del modelo. Esto puede estar relacionado con problemas como escalamiento inadecuado de las variables, multicolinealidad, o falta de variabilidad en los datos.
+
+Aunque el modelo muestra una reducción drástica en el AIC (valor de 6) y una residual deviance prácticamente nula, estos resultados podrían estar reflejando un sobreajuste (overfitting) más que una verdadera mejora en la capacidad predictiva. En este contexto, es fundamental no depender únicamente de métricas como el AIC para evaluar la calidad del modelo, especialmente cuando los parámetros carecen de significancia estadística y estabilidad.
+
+
+### 3. Validación Cruzada (k =3)
+
+```{r}
+library(caret)
+train_modelo_logistico$popular <- as.factor(train_modelo_logistico$popular)
+
+
+# Configuración de validación cruzada
+control <- trainControl(method = "cv", number = 3)
+
+# Ajuste del modelo con validación cruzada
+modelo_cv <- suppressWarnings(train(popular ~ ., 
+                   data = train_modelo_logistico, 
+                   method = "glm", 
+                   family = "binomial", 
+                   trControl = control))
+
+# Resultados de la validación cruzada
+print(modelo_cv)
+
+```
+
+
+Los resultados de la validación cruzada:
+
+  + **Exactitud (Accuracy)**: 94.3%
+
+  + **Índice Kappa**: 0.78
+
+La alta precisión sugiere que el modelo es efectivo para predecir correctamente la popularidad de una publicación. Por otro lado, el índice Kappa cercano a 0.8 indica una concordancia sustancial entre las predicciones del modelo y los valores reales, lo cual refuerza la validez del modelo.
+
+
+
+### 4. Evaluación con curva ROC y AUC
+
+```{r}
+test_modelo_logistico <- na.omit(test)
+# Crear variable binaria: 1 si Total_Interactions > 275, 0 si no
+test_modelo_logistico$popular <- ifelse(test_modelo_logistico$`Total Interactions` > 275, 1, 0)
+# Quitar la columna 'Total Interactions' del dataset de entrenamiento
+test_modelo_logistico <- subset(test_modelo_logistico, select = -`Total Interactions`)
+# Crear nueva variable de interacción
+test_modelo_logistico$lifetime_share_interaccion <- test_modelo_logistico$`Lifetime Post Total Impressions` * test_modelo_logistico$share
+# Asegurar que 'Category' sea factor con los mismos niveles que en el entrenamiento
+test_modelo_logistico$Category <- factor(test_modelo_logistico$Category, 
+                                         levels = levels(train_modelo_logistico$Category))
+
+
+
+```
+
+
+
+
+
+```{r}
+
+# Librería para ROC
+library(pROC)
+
+# Predicciones (probabilidades)
+predicciones <- predict(modelo_cv, newdata = test_modelo_logistico, type = "prob")
+
+table(predicciones[,1]>0.5,test_modelo_logistico$popular)
+
+# Curva ROC
+roc_curve <- roc(test_modelo_logistico$popular, predicciones$`1`)  # Clase "1" = popular
+plot(roc_curve, col = "blue", main = "Curva ROC - Popularidad de publicaciones")
+
+# AUC
+auc(roc_curve)
+
+
+```
+
+
+A pesar de la falta de significancia estadística de los coeficientes en el modelo final, los resultados sobre el conjunto de prueba muestran un rendimiento notablemente alto en términos de discriminación, con un valor del área bajo la curva ROC (AUC) de 0.9915. Este valor cercano a 1 indica que el modelo es altamente eficaz para distinguir entre publicaciones populares y no populares en los datos de prueba.
+
+
+
+
+
+
+## Modelo de regresión Poisson
+
+Aplicamos regresión de Poisson porque es un modelo clásico para variables que representan conteos de eventos, como las interacciones totales por publicación. Sin embargo, este modelo asume que la media y la varianza son iguales.
+
+```{r}
+# Calcular media y varianza de la variable objetivo
+media <- mean(train_clean$`Total Interactions`)
+varianza <- var(train_clean$`Total Interactions`)
+
+cat("Media:", media, "\n")
+cat("Varianza:", varianza, "\n")
+
+```
+
+Como vemos, podemos anticiparnos a los resultados ya que la varianza es mayo que la media...
+
+
+### 1. Ajuste del modelo de regresión de Poisson
+Modelaremos el número de interacciones totales (Total_Interactions) en publicaciones de Facebook en función de variables nuestras variables y así ver cuales son más sognificativas.
+
+```{r}
+
+
+# Ajuste del modelo de regresión de Poisson
+modelo_poisson <- glm(`Total Interactions` ~ ., 
+                      family = poisson, 
+                      data = train_clean)
+
+# Resumen del modelo
+summary(modelo_poisson)
+
+```
+
+El modelo de Poisson ajustado a todas las variables demuestra un buen ajuste (AIC = 7973.3). Variables como comment, share, Paid, Category2, Category3 y Lifetime Post reach by people who like your Page pueden apreciarse altamente significativas, indicando que el contenido pagado, el tipo de publicación y la interacción previa de usuarios son factores clave para maximizar el número total de interacciones.
+
+### 2. Evaluación del modelo con Validación Cruzada
+Usaremos validación cruzada k-fold (k = 3) para evaluar el rendimiento del modelo, dividiendo el conjunto de datos en 5 particiones.
+```{r}
+# Cargar librería caret si no está instalada
+# install.packages("caret")
+library(caret)
+
+# Configuración de la validación cruzada de 3-fold
+control <- trainControl(method = "cv", number = 3)
+
+# Ajuste del modelo con validación cruzada usando caret
+modelo_cv_poisson <- train(`Total Interactions` ~ .,
+                           data = train_clean,
+                           method = "glm",
+                           family = poisson,
+                           trControl = control)
+
+# Resultados de la validación cruzada
+print(modelo_cv_poisson)
+
+
+```
+
+Tras realizar una validación cruzada de 3-fold sobre el modelo de regresión de Poisson, se obtuvo un RMSE (Root Mean Squared Error) de aproximadamente 50,396.68, un R² de 0.421 y un MAE (Mean Absolute Error) de 5,726.26.
+Estos resultados indican que el modelo tiene una capacidad explicativa moderada, explicando alrededor del 42 % de la variabilidad en el número total de interacciones. Sin embargo, tanto el RMSE como el MAE reflejan una magnitud considerable de error. Esto quiere decir que el modelo no predice con precisión y puede dar resultados poco fiables.
+
+Si bien el modelo proporciona una aproximación razonable, existe un margen claro de mejora, especialmente si se buscan predicciones más precisas. 
+
+
+
+### 3. Diagnóstico de sobredispersión
+La regresión de Poisson asume que la media y la varianza son iguales. Verificamos si esta condición se cumple:
+
+```{r}
+# Comprobación de la sobredispersión
+deviance <- modelo_poisson$deviance
+df_residual <- modelo_poisson$df.residual
+
+sobredispersión <- deviance / df_residual
+cat("Índice de Sobredispersión:", sobredispersión, "\n")
+
+```
+
+Interpretación:
+  + Si el índice de sobredispersión ≈ 1 → no hay problema
+
+  + Si > 1.5 o 2 → hay sobredispersión → considerar otro modelo
+
+
+El índice de sobredispersión obtenido es de aproximadamente 28.13.
+Dado que un valor cercano a 1 indicaría una correcta adecuación del modelo de Poisson (que asume que la media y la varianza son iguales), este valor tan elevado evidencia una fuerte sobredispersión en los datos.
+Esto sugiere que el modelo de Poisson clásico no es del todo adecuado para este conjunto de datos, y sería recomendable considerar modelos alternativos.
+
+### 4. Comparación con un modelo Binomial Negativo
+
+```{r}
+library(MASS)
+
+# Ajuste del modelo binomial negativo (detectada sobredispersión en Poisson)
+modelo_binom_neg <- glm.nb(`Total Interactions` ~ ., data = train_clean)
+
+# Resumen del modelo binomial negativo
+summary(modelo_binom_neg)
+
+# Comparación de AIC entre modelos
+cat("AIC Modelo Poisson:", AIC(modelo_poisson), "\n")
+cat("AIC Modelo Binomial Negativo:", AIC(modelo_binom_neg), "\n")
+```
+
+Hemos ajustado el modelo de regresión binomial negativa paracorregir la sobredispersión previamente detectada en el modelo de Poisson. 
+Este nuevo modelo presentó un ajuste considerablemente mejor, con una reducción importante en la devianza residual (de 1039 a 284) y una caída drástica en el AIC (de 7973 a 2779), lo cual indica un modelo mucho más eficiente. 
+Entre las variables más significativas que explican las interacciones se destacan el tipo de categoría de publicación (Category2 y Category3), el hecho de que la publicación haya sido pagada, así como las interacciones sociales como los "likes" y "shares", todas con efectos positivos. Algo que nos ha sorprendido es que las impresiones generadas únicamente entre personas que ya siguen la página muestran un efecto negativo sobre las interacciones totales. 
+En conjunto, estos resultados reflejan que tanto la promoción de publicaciones como el contenido en ciertas categorías y la participación activa de los usuarios son factores clave para maximizar la interacción. Dado el buen ajuste del modelo, podría ser útil reducirlo a las variables más relevantes mediante una selección de variables para mejorar su interpretabilidad sin perder poder predictivo.
+
+
+
+### 5. Visualización de resultados y diagnóstico final
+
+```{r}
+# Diagnóstico de residuos para el modelo de Poisson
+par(mfrow = c(2, 2))
+plot(modelo_poisson)
+
+```
+
+
+**Gráfico de residuos vs valores ajustados**: Se observa una gran dispersión de los residuos alrededor de cero, con varios valores extremos alejados del patrón general. Además, no se aprecia una distribución homogénea de los residuos, lo que indica violación del supuesto de homocedasticidad (varianza constante). Esto sugiere sobredispersión.
+
+**Q-Q Plot**: En este gráfico, los residuos estandarizados se desvían de la línea de referencia teórica en uno de los extremos. 
+
+**Scale-Location Plot**: También muestra una tendencia ascendente, lo que reafirma la existencia de heterocedasticidad, es decir, que la varianza de los residuos cambia con los valores ajustados.
+
+**Residuos vs leverage**: Aparecen algunos puntos con alta influencia (valores altos de leverage), como las observaciones 95, 115 y 146. Además, hay residuos estandarizados extremadamente altos o bajos, lo que indica datos influyentes que afectan desproporcionadamente el modelo.
+
+
+```{r}
+# Diagnóstico de residuos para el modelo binomial negativo (si es necesario)
+par(mfrow = c(2, 2))
+if (exists("modelo_binom_neg")) {
+  plot(modelo_binom_neg)
+}
+```
+
+Mejoras respecto al modelo de Poisson:
+
+  + **Menor dispersión en los residuos (Residuals vs Fitted)**:
+    La nube de puntos está mucho más centrada alrededor del eje horizontal (residuo = 0) y con menor variabilidad. Esto indica un mejor ajuste del modelo a los datos, con menor presencia de valores extremos y una estructura de residuos más controlada.
+
+  + **Q-Q Plot más alineado con la línea teórica**:
+    Aunque hay algunos puntos en los extremos que se desvían, la mayoría de los residuos siguen la línea de referencia. 
+
+  + **Menor presencia de outliers influyentes**:
+    En el gráfico "Residuals vs Leverage", los puntos de influencia están más controlados. No hay residuos excesivamente grandes ni muchas observaciones fuera de las líneas de Cook’s Distance.
+
+  + **Heterocedasticidad menos pronunciada (Scale-Location)**:
+    Aunque no es completamente plana, la curva de tendencia muestra una menor pendiente, lo cual indica que el problema de varianza no constante se ha reducido notablemente.
+
+
+### 6. Conclusión general
+
+El modelo binomial negativo es superior al modelo de Poisson en este caso.
+Corrige la sobredispersión, mejora el ajuste de los residuos, reduce la influencia de outliers y produce un diagnóstico gráfico más favorable en todos los aspectos clave. Por tanto, entre los modelos de regresión generalizasa, elegimos el modelo binomial negativo como modelo final, siempre y cuando se mantenga su validez al evaluarlo con medidas como AIC, BIC y validación cruzada.
+
+
   
