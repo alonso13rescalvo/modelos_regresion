@@ -1,0 +1,2259 @@
+---
+title: "Proyecto-Facebook-Metrics"
+author: "Cristina, Lucia, Alonso"
+date: "2025-02-09"
+output: 
+  html_document:
+      theme: journal
+      toc: yes
+      toc_depth: 6
+      toc_float: yes
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+```{r}
+
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(pheatmap)
+library(lmtest)
+library(glmnet)
+library(caret)
+library(splines)
+library(MASS)
+library(car)
+
+```
+
+# Introducción
+
+**Información de los autores** Este proyecto ha sido realizado por el grupo 9 del grado de Ciencia e Ingeniería de datos para la asignatura de Modelos de Regresión que cuanta con los siguientes integrantes:
+
+-   **Cristina Rodríguez Ayllón**
+-   **Lucía Arnaldo Cuevas**
+-   **Alonso Rescalvo Casas**
+
+El trabajo ha sido repartido de la siguiente manera:
+
+- EDA: Cristina, Lucía y Alonso
+
+- Modelos de regresión lineal: Cristina y Lucía
+
+- Métodos de selección de variables y problemas de regularización: Cristina y Lucía
+
+- Modelos no lineales: Alonso
+
+Nuestro datasetes es el de "Facebook Metrics Dataset". Es un conjunto de datos que recopila diversas métricas relacionadas con la interacción de los usuarios en páginas de Facebook. Estas métricas incluyen información sobre impresiones, alcance, interacciones con publicaciones, entre otras.
+
+```{r lectura, warning=FALSE}
+# lectura de datos
+dataset_Facebook <- read_delim("dataset_Facebook.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+
+#datos<-read.csv("datos/datos.csv")
+ntotal <- dim(dataset_Facebook)[1] # numero de observaciones
+ptotal <- dim(dataset_Facebook)[2] # numero de columnas
+
+
+
+```
+
+Comprobamos que tenemos $n=$`r ntotal` observaciones y $p=$`r ptotal` variables en la base de datos.
+
+Según la descripción oficial de los datos, las variables que conforman el conjunto de datos son:
+
+## Tabla descriptiva de las variables
+```{r}
+# Crear un data frame con las descripciones de las variables
+tabla_variables <- data.frame(
+  Variable = c("Page total likes", "Type", "Category", "Post Month", "Post Weekday", 
+               "Post Hour", "Paid", "Lifetime Post Total Reach", "Lifetime Post Total Impressions", 
+               "Lifetime Engaged Users", "Lifetime Post Consumers", "Lifetime Post Consumptions", 
+               "Lifetime Post Impressions by people who have liked your Page", 
+               "Lifetime Post reach by people who like your Page", 
+               "Lifetime People who have liked your Page and engaged with your post", 
+               "comment", "like", "share", "Total Interactions"),
+  
+  Tipo = c("Numérica", "Categórica", "Categórica", "Numérica", "Numérica", 
+           "Numérica", "Binaria", "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", 
+           "Numérica", "Numérica", 
+           "Numérica", "Numérica", "Numérica", "Numérica", "Numérica"),
+  
+  Descripción = c("Cantidad total de 'me gusta' en la página",
+                  "Tipo de post (foto, estado, video, etc.)",
+                  "Categoría del post",
+                  "Mes en el que se realizó la publicación",
+                  "Día de la semana en que se publicó",
+                  "Hora del día en que se publicó",
+                  "Indica si la publicación fue pagada (1) o no (0)",
+                  "Alcance total de la publicación",
+                  "Total de impresiones de la publicación",
+                  "Usuarios comprometidos con la publicación",
+                  "Número de consumidores de la publicación",
+                  "Total de interacciones con la publicación",
+                  "Impresiones por personas que han dado 'me gusta' a la página",
+                  "Alcance de la publicación por personas que han dado 'me gusta' a la página",
+                  "Personas que dieron 'me gusta' a la página e interactuaron con la publicación",
+                  "Número de comentarios en la publicación",
+                  "Número de 'me gusta' en la publicación",
+                  "Número de veces que se compartió la publicación",
+                  "Total de interacciones (comentarios, likes y compartidos)")
+)
+
+# Mostrar la tabla en formato bonito
+kable(tabla_variables, caption = "Descripción de las Variables del Dataset")
+
+
+```
+
+# EDA
+
+## Preguntas a resolver pre-EDA
+
+**¿Cuántas observaciones hay?¿Cuántas variables/características están medidas?** 
+```{r}
+dim(dataset_Facebook)
+```
+Hay 500 observaciones y 19 variables
+
+
+**¿Existen valores faltantes?** 
+
+```{r}
+sum(is.na(dataset_Facebook))
+
+```
+Hay 6 valores faltantes. Más adelante los trataremos.
+
+**¿Qué tipo variables aparecen en la base de datos?**
+Todas nuestras variables son discretas. A excepcion de un par que son categóticas.
+
+**¿Qué variables son discretas?¿Cuáles son continuas?¿Qué categorías tienen las variables?¿Hay variables tipo texto?** 
+
+Todas estas preguntas se resuelven mirando la tabla descriptiva que generamos anteriormente.
+
+
+**Variable objetivo: ¿Existe una variable de "respuesta"? ¿Binaria o multiclase?** 
+Sí, la variable de respuesta es "Total Interactions". Como estamos en un proyecto de regresión, esta variable es numérica continua y no es binaria ni multiclase.
+
+**¿Es posible identificar variables irrelevantes?. Estudiar variables relevantes requiere, habitualmente, métodos estadísticos.**
+Sí, pero para hacerlo correctamente hay que aplicar métodos estadísticos como matrices de correlación.
+
+**¿Es posible identificar la distribución que siguen las variables?**
+Sí, se puede hacer con gráficos y pruebas estadísticas como: Histogramas para visualizar la forma de la distribución; Boxplots para detectar outliers y asimetrías; Q-Q Plots para comparar con una distribución normal; Pruebas estadísticas como Shapiro-Wilk; o Kolmogorov-Smirnov para evaluar normalidad.
+
+
+## Partición de los datos 
+
+Realizamos la división de nuestros datos en 3 muestras: entrenamiento, validación y test.
+
+```{r particion}
+# mediante una semilla conseguimos que el ejercicio sea reproducible
+set.seed(1)
+
+
+# creamos índices
+indices <- 1:ntotal
+ntrain <- ntotal * .5
+ntest <- ntotal * .25
+nval <- ntotal - (ntrain+ntest)
+indices.train <- sample(indices, ntrain, replace = FALSE)
+indices.test <- sample(indices[-indices.train],ntest,replace=FALSE)
+indices.val <- indices[-c(indices.train,indices.test)]
+
+# Usamos el 50% de la base de datos como conjunto de entrenamiento
+# 25% para test
+# 25% para validación
+train <- dataset_Facebook[indices.train,]
+test  <- dataset_Facebook[indices.test,]
+val   <- dataset_Facebook[indices.val, ]
+
+
+```
+
+## Estudio de las variables
+
+La idea es que vayamos viendo que distribucion sigue cada variables (con un histograma), si hay valores atipicos (con un boxplot) y enfrentarlas con el target, viendo así también la correlación.
+
+### Target 
+
+**Total Interactions**
+Nuestro target es el total de interacciones, que es la suma de “me gusta” (like), “comentarios” (comment) y “compartir” (share) de la publicación.
+
+```{r}
+
+summary(train$`Total Interactions`)
+
+
+```
+
+```{r}
+#Histograma(Para ver la forma de la distribución):
+
+ggplot(train, aes(x = `Total Interactions`)) +
+  geom_histogram(binwidth = 50, fill = "lightblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribución del Target (Total Interactions)", x = "Total Interactions", y = "Frecuencia")
+
+```
+
+```{r}
+#Boxplot(Para detectar outliers):
+
+ggplot(train, aes(y = `Total Interactions`)) +
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red") +
+  theme_minimal() +
+  labs(title = "Boxplot del Target (Total Interactions)", y = "Total Interactions")
+```
+
+
+
+### Variables
+
+#### Page total likes
+
+Esta variable (Total de "me gusta" de la página) es el número de personas a las que les ha gustado la página de la empresa.
+
+```{r}
+
+summary(train$`Page total likes`)
+
+```
+
+El análisis de la variable Page total likes muestra que los valores oscilan entre un mínimo de 81,370 y un máximo de 139,441. La mediana se sitúa en 128,032, mientras que la media es ligeramente menor, con un valor de 122,570, lo que sugiere una leve asimetría hacia la izquierda. Esto indica que la mayoría de las publicaciones tienen un número de likes relativamente alto, concentrándose entre los valores de 120,000 y 140,000, aunque existen algunas con menos de 100,000 likes.
+
+```{r}
+# Histograma de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(x = train$`Page total likes`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Page total likes (Train)", x = "Page total likes", y = "Frecuencia")
+
+```
+
+Al observar el histograma, se aprecia que la distribución de los likes no es completamente uniforme, sino que tiende a agruparse en los valores más elevados.
+
+```{r}
+# Boxplot de "Page total likes" en el conjunto de entrenamiento
+ggplot(train, aes(y = train$`Page total likes`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Page total likes (Train)", y = "Page total likes")
+
+```
+
+El boxplot refuerza esta idea, mostrando que la mayor parte de los datos se encuentra dentro de un rango definido, sin valores extremos que se consideren atípicos.
+
+```{r}
+#  Page total likes
+cor(train$`Total Interactions`, train$`Page total likes`, use="complete.obs")  # Correlación
+plot(train$`Page total likes`, train$`Total Interactions`, 
+     main="Page Total Likes vs Total Interactions",
+     xlab="Page Total Likes", ylab="Total Interactions", 
+     col="red", pch=16)
+```
+
+En cuanto a la relación entre Page total likes y Total Interactions, la correlación obtenida es muy baja y positiva, lo que indica que el número de likes en una página no determina de manera significativa el nivel de interacción de sus publicaciones. El diagrama de dispersión confirma esta observación, ya que no se percibe una tendencia clara entre ambas variables. Hay casos en los que páginas con un menor número de likes generan una gran cantidad de interacciones, mientras que otras con más likes no necesariamente logran el mismo nivel de engagement.
+
+Esto sugiere que la cantidad de likes en una página no es el único factor que influye en la interacción del público. Es probable que variables como el tipo de publicación, la hora en la que se publica o el contenido del mensaje tengan un impacto mayor en el número de interacciones.
+
+
+
+#### Type
+
+En cuanto a ala varible Tipo, se trata del tipo de contenido (Enlace, Foto, Estado, Vídeo).
+
+```{r}
+summary(train$`Type`) 
+
+```
+
+```{r}
+table(train$Type)
+
+
+```
+
+```{r}
+# Crear un gráfico de barras
+ggplot(train, aes(x = Type)) + 
+  geom_bar() +
+  labs(title = "Gráfico de Barras de la Variable 'type'", 
+       x = "Tipo", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+Se puede ver que predominan las fotos ante el resto.
+
+
+
+```{r}
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(Type), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Type vs Total Interactions",
+       x = "Type",
+       y = "Total Interactions") +
+  theme_minimal()
+
+```
+
+Photo parece ser el tipo de contenido más propenso a generar interacciones extremas (outliers).
+Esto podría reflejar que las fotos tienen un mayor potencial de viralización.
+
+Video tiene una dispersión más grande en las interacciones, pero menos valores atípicos, lo que podría sugerir un desempeño más uniforme, con publicaciones tanto exitosas como mediocres.
+
+Las publicaciones de tipo Link parecen ser las que generan menos interacciones, con poca variación y pocos outliers.
+
+La mediana de interacciones es similar entre Photo, Status, y Video, pero las fotos destacan por sus outliers hacia arriba.
+
+#### Category 
+
+La variable categoría es la caracterización manual de contenido: acción (ofertas especiales y concursos), producto (publicidad directa, contenido explícito relacionado con la marca) e inspiración (contenido no explícito relacionado con la marca).
+```{r}
+summary(train$Category)
+table(train$Category)
+
+```
+El 1 reprsenta "Action", el 2 es "Product" y el 3 es "Inspiration". 
+
+```{r}
+# Convertir Category en un factor (si no lo es ya)
+train$Category <- as.factor(train$Category)
+
+# Crear el gráfico de barras con colores personalizados
+ggplot(train, aes(x = Category, fill = Category)) + 
+  geom_bar() +
+  scale_fill_manual(values = c("#98F5FF", "blue", "darkblue")) +  # Paleta manual
+  labs(title = "Gráfico de Barras de la Variable 'Category' con Colores Personalizados", 
+       x = "Categoría", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+## Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(Category), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Category vs Total Interactions",
+       x = "Category",
+       y = "Total Interactions") +
+  theme_minimal()
+```
+La correlación es baja y positiva. Hay una relación débil entre las interacciones y la categoría, pero no es una correlación fuerte.
+
+
+
+
+#### Post Month 
+
+La variable "Mes del posteo" se trata del mes en que se publicó el post (enero, febrero, marzo,…, diciembre).
+
+```{r}
+summary(train$`Post Month`)
+table(train$`Post Month`)
+
+```
+
+```{r}
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Month`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de 'Post Month'", 
+       x = "Post Month", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+```
+
+
+```{r}
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(`Post Month`), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Post Month vs Total Interactions",
+       x = "Post Month",
+       y = "Total Interactions") +
+  theme_minimal()
+```
+
+
+Algunos meses muestran una mayor dispersión de interacciones (como en julio y octubre), lo que indica que hubo publicaciones con interacciones muy por encima del promedio.
+
+Se observan outliers en varios meses, lo que sugiere que hubo publicaciones excepcionales con interacciones inusualmente altas.
+
+Los meses 7 (julio) y 10 (octubre) parecen tener la mayor variabilidad en interacciones.
+
+No parece haber una tendencia clara en la estacionalidad de las interacciones a lo largo de los meses.
+
+Algunos meses tienen más publicaciones virales (con valores extremos), pero la mayoría de los meses tienen una distribución de interacciones relativamente baja y estable.
+
+A pesar de todo, la correlación es muy baja y negativa. No hay una relación significativa entre las interacciones y el mes en que se publicó, y si existe alguna, es muy débil.
+
+
+#### Post Weekday 
+
+Esta variable trata del día de la semana en que se publicó la entrada (domingo, lunes, …, sábado).
+```{r}
+summary(train$`Post Weekday`)
+table(train$`Post Weekday`)
+
+```
+
+```{r}
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Weekday`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de `Post Weekday`", 
+       x = "Post Weekday", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+```{r}
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Post Weekday`, use="complete.obs")  # Correlación
+plot(train$`Post Weekday`, train$`Total Interactions`, main="`Post Weekday` vs Total Interactions",
+     xlab="`Post Weekday`", ylab="Total Interactions", col="#E066FF", pch=16)
+```
+
+No parece haber una relación importante entre el día de la semana de la publicación y las interacciones. Esto indica que el día de la semana no tiene un impacto notable en la cantidad de interacciones en las publicaciones.
+
+
+
+#### Post Hour
+
+Esta variable es la hora de publicación de la publicación (0, 1, 2, 3, 4, …, 23)
+
+```{r}
+summary(train$`Post Hour`)
+table(train$`Post Hour`)
+```
+
+```{r}
+# Crear un gráfico de barras para la variable 'Post Month'
+ggplot(train, aes(x = factor(`Post Hour`))) + 
+  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Gráfico de Barras de `Post Hour`", 
+       x = "Post Hour", 
+       y = "Frecuencia") +
+  theme_minimal()
+
+
+```
+
+```{r}
+# Crear un boxplot para enfrentar la variable categórica con el target
+ggplot(train, aes(x = as.factor(`Post Hour`), y = `Total Interactions`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(title = "Boxplot: Post Hour vs Total Interactions",
+       x = "Post Hour",
+       y = "Total Interactions") +
+  theme_minimal()
+```
+Los resultados muestran que las publicaciones realizadas entre las 5 AM y 12 PM tienden a generar más interacciones en promedio. En particular, las publicaciones a las 5 AM y 12 PM presentan las medianas más altas, indicando una mayor participación de los usuarios.
+
+Además, se identificaron varios outliers (valores atípicos) en la madrugada (especialmente entre las 2 AM y 5 AM), lo que sugiere que algunas publicaciones pueden volverse virales, aunque no sea la norma. Por otro lado, las publicaciones realizadas después de las 5 PM muestran una menor cantidad de interacciones y una variabilidad reducida.
+
+A pesar de todo, la correlación es muy baja y negativa. No hay una relación importante entre las interacciones y la hora de la publicación.
+
+
+#### Paid
+
+Esta varible trata de si la empresa pagó a Facebook por publicidad (0=no, 1=sí).
+
+```{r}
+summary(train$Paid)
+```
+La media es 0,2329. Al ser mucho más cercano a 0 que a 1 nos informa que hay muchas más publicaciones pagadas que no pagadas.
+
+Tenemos 1 NA, el cual lo eliminamos
+```{r}
+train_clean <- train %>%
+  filter(!is.na(Paid))
+```
+
+
+```{r}
+# Gráfico de barras 
+ggplot(train_clean, aes(x = as.factor(Paid), fill = as.factor(Paid))) +
+  geom_bar() +
+  labs(title = "Distribución de la Variable 'Paid'",
+       x = "Paid (0 = No, 1 = Sí)",
+       y = "Frecuencia") +
+  scale_fill_manual(values = c("lightblue", "lightcoral"), name = "Paid") +
+  theme_minimal()
+
+```
+La barra azul hace referencia a las publicaciones que no fueron pagadas. Vemos que hay más del doble de publicaciones no pagadas que pagadas.
+
+```{r}
+ggplot(train_clean, aes(x = as.factor(Paid), y = `Total Interactions`, fill = as.factor(Paid))) +
+  geom_boxplot(outlier.color = "red", outlier.shape = 16, outlier.size = 2) +
+  labs(title = "Distribución de Total Interactions según Paid",
+       x = "Paid (0 = No, 1 = Sí)",
+       y = "Total Interactions") +
+  scale_fill_manual(values = c("lightblue", "lightcoral"), name = "Paid") +
+  theme_minimal()
+
+```
+
+Este boxplot nos ayuda a ver la correlación de Paid con la variable objetivo. La correlación es baja y positiva. Hay una relación débil y positiva entre las interacciones y si el post fue pagado o no, pero no es significativa.
+
+
+#### Lifetime Post Total Reach
+
+Es el número de personas alcanzadas, es decir,la cantidad de personas que vieron una publicación de la página (usuarios únicos).
+
+```{r}
+summary(train$'Lifetime Post Total Reach')
+```
+Los valores se encuentran entre un mínimo de 238 y un máximo de 139008. La mediana es 4925, mientras que la media tiene un valor de 13316. El hecho de que la media sea mucho mayor que la mediana sugiere que existen algunos valores atípicos (publicaciones con un alcance significativamente más alto) que están influyendo en la media, mientras que la mayoría de las publicaciones tienen un alcance no tal alto.
+
+```{r}
+# Histograma
+ggplot(train, aes(x = `Lifetime Post Total Reach`)) +
+  geom_histogram(binwidth = 500, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histograma de Lifetime Post Total Reach",
+       x = "Lifetime Post Total Reach",
+       y = "Frecuencia") +
+  theme_minimal()
+```
+Podemos ver que la distribución de los datos no es uniforme. Se acumula en valores más bajos, con valores puntuales más altos. 
+
+```{r}
+# Boxplot de "Lifetime Post Total Reach"
+ggplot(train, aes(y = train$`Lifetime Post Total Reach`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Lifetime Post Total Reach", y = "Lifetime Post Total Reach")
+
+```
+Con el boxplot confirmamos la idea que veíamos en el histograma.
+
+```{r}
+# Enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Lifetime Post Total Reach`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Total Reach`, train$`Total Interactions`, main="Lifetime Post Total Reach vs Total Interactions",
+     xlab="Lifetime Post Total Reach", ylab="Total Interactions", col="orange", pch=16)
+
+
+```
+La correlación es moderada y positiva. Hay una relación moderada entre las interacciones y el alcance total de la publicación a lo largo de su vida.
+
+
+#### Lifetime Post Total Impressions
+
+Hace referencia al número de impresiones totales. Las impresiones son el número de veces que se muestra una publicación de una página, independientemente de si se hace clic en ella. Es posible que se vean varias impresiones de la misma publicación. Por ejemplo, alguien podría ver una actualización de una página en la sección de noticias una vez y luego otra si un amigo la comparte.
+
+```{r}
+summary(train$'Lifetime Post Total Impressions')
+```
+
+Los valores se encuentran entre un mínimo de 570 y un máximo de 665792. La mediana es 8379, mientras que la media tiene un valor de 26904. Al igual que ocurría antes,el hecho de que la media sea mucho mayor que la mediana sugiere que existen algunos valores atípicos que están influyendo en la media, mientras que la mayoría de las publicaciones tienen un alcance no tal alto.
+
+```{r}
+# Histograma
+ggplot(train, aes(x = `Lifetime Post Total Impressions`)) +
+  geom_histogram(binwidth = 500, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histograma de Lifetime Post Total Impressions",
+       x = "Lifetime Post Total Impressions",
+       y = "Frecuencia") +
+  theme_minimal()
+```
+De nuevo sucede que la distribución de los datos no es uniforme, sino que se acumula en valores más bajos, con valores puntuales más altos. 
+
+```{r}
+# Boxplot de 'Lifetime Post Total Impressions'
+ggplot(train, aes(y = train$`Lifetime Post Total Impressions`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Lifetime Post Total Impressions", y = "Lifetime Post Total Impressions")
+
+```
+
+
+```{r}
+# Enfrentamiento con el target 
+# Lifetime Post Total Impressions
+cor(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Total Impressions`, train$`Total Interactions`, main="Lifetime Post Total Impressions vs Total Interactions",
+     xlab="Lifetime Post Total Impressions", ylab="Total Interactions", col="brown", pch=16)
+```
+
+La correlación es moderada y positiva. Existe una relación moderada entre las interacciones y el total de impresiones de la publicación durante su vida.
+
+
+#### Lifetime Engaged Users
+
+Es el número de personas que interactuaron con la publicación, la cantidad de personas que hicieron clic en cualquier parte de una publicación (usuarios únicos).
+
+```{r}
+summary(train$'Lifetime Engaged Users')
+```
+
+```{r}
+# Histograma
+ggplot(train, aes(x = `Lifetime Engaged Users`)) +
+  geom_histogram(binwidth = 500, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histograma de Lifetime Engaged Users",
+       x = "Lifetime Post Total Reach",
+       y = "Frecuencia") +
+  theme_minimal()
+```
+Esta variable se acumula en valores más bajos, lo que indica que la mayoría de las publicaciones tienen un alcance bajo y pocos usuarios comprometidos, mientras que solo unas pocas publicaciones logran un alcance elevado.
+
+```{r}
+# Boxplot de "Lifetime Engaged Users"
+ggplot(train, aes(y = train$`Lifetime Post Total Reach`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot de Lifetime Engaged Users", y = "Lifetime Engaged Users")
+
+```
+Vemos que la mayoría de las publicaciones tienen valores bajos, pero que hay bastantes valores atípicos con valores más altos.
+
+```{r}
+#enfrentamiento con el target (Lucía)
+# Lifetime Engaged Users
+cor(train$`Total Interactions`, train$`Lifetime Engaged Users`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Engaged Users`, train$`Total Interactions`, main="Lifetime Engaged Users vs Total Interactions",
+     xlab="Lifetime Engaged Users", ylab="Total Interactions", col="cyan", pch=16)
+
+```
+La correlación es moderada-alta y positiva. Hay una relación bastante fuerte entre las interacciones y los usuarios comprometidos con la publicación.
+
+#### Lifetime Post Consumers
+
+Es el número de personas que consumieron el contenido. Esto es la cantidad de personas que hicieron clic en cualquier parte de una publicación.
+
+```{r}
+summary(train$'Lifetime Post Consumers')
+```
+
+
+```{r}
+# Histograma
+ggplot(train, aes(x = `Lifetime Post Consumers`)) +
+  geom_histogram(binwidth = 500, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histograma de Lifetime Post Consumers",
+       x = "Lifetime Post Consumers",
+       y = "Frecuencia") +
+  theme_minimal()
+```
+Es una distribución bastante similar a la anterior.
+
+```{r}
+# Boxplot de 'Lifetime Post Consumers'
+ggplot(train, aes(y = train$`Lifetime Post Consumers`)) + 
+  geom_boxplot(fill = "lightblue", color = "black", outlier.colour = "red", outlier.size = 2) +
+  theme_minimal() +
+  labs(title = "Boxplot deLifetime Post Consumers", y = "Lifetime Post Consumers")
+
+```
+
+```{r}
+#enfrentamiento con el target (Lucía)
+# Lifetime Post Consumers
+cor(train$`Total Interactions`, train$`Lifetime Post Consumers`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Consumers`, train$`Total Interactions`, main="Lifetime Post Consumers vs Total Interactions",
+     xlab="Lifetime Post Consumers", ylab="Total Interactions", col="magenta", pch=16)
+
+```
+La correlación es moderada y positiva. Hay una relación moderada entre las interacciones y el número de consumidores de la publicación.
+
+#### Lifetime Post Consumptions
+
+Esta variable se refiere al número de interacciones con el contenido, es decir, el número de clics en cualquier parte de una publicación.
+
+```{r}
+summary(train$`Lifetime Post Consumptions`)
+```
+
+
+
+```{r}
+# Histograma
+ggplot(train, aes(x = train$`Lifetime Post Consumptions`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Post Consumptions (Train)", 
+       x = "Lifetime Post Consumptions", y = "Frecuencia")
+```
+
+
+```{r}
+#enfrentamiento con el target (Lucía)
+# Lifetime Post Consumptions
+cor(train$`Total Interactions`, train$`Lifetime Post Consumptions`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Consumptions`, train$`Total Interactions`, main="Lifetime Post Consumptions vs Total Interactions",
+     xlab="Lifetime Post Consumptions", ylab="Total Interactions", col="gray", pch=16)
+
+```
+La correlación es baja y positiva. Hay una relación débil entre las interacciones y las consumiciones de la publicación.
+
+
+#### Lifetime Post Impressions by people who have liked your Page
+
+Este es el número total de impresiones solo de personas a las que les ha gustado una página.
+
+```{r}
+# Resumen
+summary(train$`Lifetime Post Impressions by people who have liked your Page`)
+
+```
+
+
+
+```{r}
+#Histograma
+ggplot(train, aes(x = train$`Lifetime Post Impressions by people who have liked your Page`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Post Impressions by people who have liked your Page (Train)", 
+       x = "Lifetime Post Impressions by people who have liked your Page", y = "Frecuencia")
+```
+
+
+```{r}
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$`Lifetime Post Impressions by people who have liked your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post Impressions by people who have liked your Page`, train$`Total Interactions`, main="`Lifetime Post Impressions by people who have liked your Page` vs Total Interactions",
+     xlab="`Lifetime Post Impressions by people who have liked your Page`", ylab="Total Interactions", col="5423", pch=16)
+
+```
+La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las impresiones de la publicación por personas que han dado "Me gusta" a la página. Cabe recalcar que es de las variables con la correlación más alta.
+
+#### Lifetime Post reach by people who like your Page
+
+Esta variable es la cantidad de personas que vieron una publicación de una página porque les gustó esa página (usuarios únicos).
+
+```{r}
+# Resumen 
+summary(train$`Lifetime Post reach by people who like your Page`)
+
+
+
+```
+
+
+
+```{r}
+#Histograma
+ggplot(train, aes(x = train$`Lifetime Post reach by people who like your Page`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime Post reach by people who like your Page (Train)", 
+       x = "Lifetime Post reach by people who like your Page", y = "Frecuencia")
+```
+
+```{r}
+#enfrentamiento con el target 
+
+cor(train$`Total Interactions`, train$`Lifetime Post reach by people who like your Page`, use="complete.obs")  # Correlación
+plot(train$`Lifetime Post reach by people who like your Page`, train$`Total Interactions`, main="`Lifetime Post reach by people who like your Page` vs Total Interactions",
+     xlab="`Lifetime Post reach by people who like your Page`", ylab="Total Interactions", col="4157", pch=16)
+
+
+```
+La correlación es alta y positiva. Hay una fuerte relación entre las interacciones y el alcance de la publicación entre las personas que han dado "Me gusta" a la página.
+Cabe recalcar, que esta es la que tine mayor correlación despues de likes y shares.
+
+#### Lifetime People who have liked your Page and engaged with your post
+Esta variable es la cantidad de personas a las que les gustó una página y hicieron clic en cualquier parte de una publicación (usuarios únicos).
+
+```{r}
+# Resumen 
+summary(train$`Lifetime People who have liked your Page and engaged with your post`)
+```
+
+
+
+```{r}
+#Histograma 
+
+
+ggplot(train, aes(x = train$`Lifetime People who have liked your Page and engaged with your post`)) + 
+  geom_histogram(binwidth = 400, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Lifetime People who have liked your Page and engaged with your post (Train)", 
+       x = "Lifetime People who have liked your Page and engaged with your post", y = "Frecuencia")
+
+```
+
+```{r}
+#enfrentamiento con el target 
+
+cor(train$`Total Interactions`, train$`Lifetime People who have liked your Page and engaged with your post`, use="complete.obs")  # Correlación
+plot(train$`Lifetime People who have liked your Page and engaged with your post`, train$`Total Interactions`, main="Lifetime People who have liked your Page and engaged with your post vs Total Interactions",
+     xlab="Lifetime People who have liked your Page and engaged with your post", ylab="Total Interactions", col="green", pch=16)
+
+```
+La correlación es moderada-alta y positiva. Hay una relación fuerte entre las interacciones y las personas que han dado "Me gusta" y se han comprometido con la publicación.
+
+
+#### Comment
+
+Se trata del número de comentarios de la publicación.
+
+```{r}
+# Resumen 
+summary(train$comment)
+
+```
+
+
+
+```{r}
+#Histograma
+ggplot(train, aes(x = train$comment)) + 
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de Comment (Train)", 
+       x = "Comment", y = "Frecuencia")
+
+```
+
+```{r}
+#enfrentamiento con el target (Alonso)
+cor(train$`Total Interactions`, train$comment, use="complete.obs")  # Correlación
+plot(train$comment, train$`Total Interactions`, main="comment vs Total Interactions",
+     xlab="comment", ylab="Total Interactions", col="blue", pch=16)
+
+```
+La correlación es moderada-alta y positiva. Hay una relación bastante fuerte entre las interacciones y los comentarios.Esto ya lo podiamos sospechar de antemano debido a que nuestro target se trata de la suma de comments, shares y likes.
+
+
+#### Like
+
+Se trata del número de “Me gusta” en la publicación.
+
+```{r}
+# Resumen 
+summary(train$like)
+
+```
+
+
+
+```{r}
+#Histograma 
+ggplot(train, aes(x = train$like)) + 
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de like (Train)", 
+       x = "like", y = "Frecuencia")
+
+```
+
+```{r}
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$like, use="complete.obs")  # Correlación
+plot(train$like, train$`Total Interactions`, main="Likes vs Total Interactions",
+     xlab="Likes", ylab="Total Interactions", col="red", pch=16)
+```
+La correlación es muy alta y positiva. Las interacciones están extremadamente relacionadas con los "Me gusta", lo que sugiere que cuando hay más interacciones, también hay un aumento proporcional en los "Me gusta". Vemos también que hay una forma totalmente lineal y sin dipersión. Esto ya lo podiamos sospechar de anremano debido a que nuestro target se trata de la suma de comments, shares y likes. Esta variable claramente es muy exlicativa.
+
+
+#### Share
+
+Se trata del número de veces que se compartió la publicación.
+
+```{r}
+# Resumen 
+summary(train$share)
+
+```
+
+
+
+```{r}
+#Histograma 
+ggplot(train, aes(x = train$share)) + 
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black", alpha = 0.7) + 
+  theme_minimal() +
+  labs(title = "Distribución de share (Train)", 
+       x = "Share", y = "Frecuencia")
+
+```
+
+```{r}
+#enfrentamiento con el target 
+cor(train$`Total Interactions`, train$share, use="complete.obs")  # Correlación
+plot(train$share, train$`Total Interactions`, main="share vs Total Interactions",
+     xlab="share", ylab="Total Interactions", col="yellow", pch=16)
+
+```
+La correlación es alta y positiva. Hay una relación fuerte entre las interacciones y las veces que se comparte el contenido. También vemos que hay una forma lineal y poco dispersa. Esto ya lo podiamos sospechar de antemano debido a que nuestro target se trata de la suma de comments, shares y likes.
+
+
+
+
+# Modelos de Regresión lineal
+
+## Regresión lineal simple 
+
+Tras observar las variables hemos optado por hacer la regresión lineal simple enfrentando Total Interactions (nuestro target) con la variable Likes y luego con la variable'Lifetime Post Impressions by people who have liked your Page' debido a los valores de correlación.
+
+### Regresión lineal simple con likes 
+
+#### 1: Ajustar el modelo de regresión lineal
+
+Ajustamos el modelo: Estamos ajustando un modelo de regresión lineal simple donde la variable dependiente es Total Interactions y la variable predictora es likes. Ajustamos el modelo y calculamos los coeficientes de la recta de regresión.
+
+Obtener estimadores: Extraemos los coeficientes del modelo (intercepto y pendiente) junto con sus errores estándar, valores t y p-valores.
+
+Esto nos permite entender la relación entre Page total likes y Total Interactions.
+
+```{r}
+# Ajustar el modelo de regresión lineal
+# tambien nos encargamos de los valores faltantes para que no den problemas
+train_clean <- na.omit(train)
+modelo <- lm(`Total Interactions` ~ `like`, data = train_clean)
+
+# Obtener estimadores de los parámetros y errores estándar
+estimadores <- coef(summary(modelo))  # Incluye estimadores y errores estándar
+
+# Imprimir los resultados
+cat("Estimadores para los parámetros del modelo:\n")
+print(estimadores)
+```
+
+Se ajustó un modelo de regresión lineal simple para analizar la relación entre la variable independiente "Likes" y la variable dependiente "Total Interactions". La ecuación estimada del modelo es la siguiente:
+
+Total_Interactions = 10.96 + 1.124 × like
+
+Los resultados del modelo indican lo siguiente:
+
+
+-   Intercepto (β_0=10.96): Representa el valor esperado de interacciones totales cuando el número de "likes" es cero.
+
+
+-   Pendiente (β_1=1.124): Indica que, en promedio, cada "like" adicional se asocia con un incremento de 1.124 interacciones totales.
+
+
+Para evaluar la significancia de los coeficientes, se analizaron sus respectivos errores estándar, valores t y p-valores.
+
+-   El p-valor asociado a la variable "like" es extremadamente pequeño (3.09×10\^−259), lo que indica que su influencia en el modelo es altamente significativa. Asimismo, su t-valor es considerablemente alto (174.87), lo que refuerza su importancia en la predicción de interacciones totales.
+
+
+-   Dado que ambos p-valores son menores a 0.05, se concluye que los coeficientes son estadísticamente significativos, lo que valida la relación entre los "likes" y las interacciones totales.
+
+#### 2: Resumen del modelo
+
+```{r}
+# Obtener resumen del modelo
+summary(modelo)
+```
+Onviamete nos da que el R² es muy alto ya que nuestro target consta de la suma de tres de las variables de nuestro dataset, entre ellas like.
+
+
+#### 3: Tabla ANOVA
+
+```{r}
+# Obtener y mostrar la tabla ANOVA
+tabla_anova <- anova(modelo)
+cat("\nTabla ANOVA:\n")
+print(tabla_anova)
+```
+
+Suma de Cuadrados (Sum Sq): 
+
+  - La variabilidad explicada por la variable "like" en el modelo es 13555096, lo que representa una proporción significativa de la variabilidad total en "Total Interactions". 
+  
+  - La variabilidad residual es de 108599, lo que sugiere que la mayor parte de la variabilidad en las interacciones totales es explicada por la variable "like".
+
+Valor F: 
+
+  - El estadístico F = 30580 indica cuántas veces la variabilidad explicada por el modelo es mayor que la variabilidad no explicada. Un valor F tan alto sugiere que el modelo es altamente significativo.
+
+Significancia del Modelo (p-valor): 
+
+  - El p-valor es \< 2.2e-16, lo que es significativamente menor al umbral habitual de 0.05. 
+  
+    - Esto indica que existe una relación estadísticamente significativa entre "like" y "Total Interactions", descartando la posibilidad de que la relación observada sea producto del azar.
+
+#### 4: Estudiar los residuos
+
+**Gráfico de residuos vs. valores ajustados**
+
+```{r}
+# Obtener los residuos
+residuos <- resid(modelo)
+
+# 1. Gráfico de residuos vs. valores ajustados
+valores_ajustados <- fitted(modelo)
+plot(valores_ajustados, residuos,
+     main = "Residuos vs Valores Ajustados",
+     xlab = "Valores Ajustados",
+     ylab = "Residuos",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+```
+
+Este gráfico muestra la relación entre los residuos y los valores ajustados por el modelo. Se observa que la dispersión de los puntos no es completamente homogénea, ya que hay una mayor concentración en los valores bajos y una mayor variabilidad en los valores altos. Esto sugiere la posible presencia de heterocedasticidad (varianza no constante de los residuos), lo que podría afectar la validez de las inferencias realizadas a partir del modelo.
+
+**Histograma de los residuos**
+
+```{r}
+# 2. Histograma de los residuos
+hist(residuos,
+     main = "Histograma de Residuos",
+     xlab = "Residuos",
+     col = "lightblue", border = "black")
+```
+
+El histograma permite analizar la distribución de los residuos. En este caso, la distribución no es completamente simétrica ni normal, pues presenta cierta asimetría y una posible concentración alrededor de cero. Esto indica que los errores no siguen una distribución normal.
+
+**QQ-Plot de residuos**
+
+```{r}
+# 3. QQ-Plot de residuos
+qqnorm(residuos, main = "QQ-Plot de los Residuos")
+qqline(residuos, col = "red", lwd = 2)
+```
+
+El gráfico de QQ-Plot compara los cuantiles de los residuos con los cuantiles de una distribución normal teórica. Se observa que los puntos no siguen completamente la línea roja, especialmente en los extremos, lo que indica la presencia de colas más pesadas de lo esperado bajo una distribución normal. Esto confirma la posible desviación de la normalidad en los residuos.
+
+**Pruebas de normalidad de los residuos**
+
+```{r}
+# 4. Pruebas de normalidad de los residuos
+shapiro_test <- shapiro.test(residuos)
+cat("Prueba de Shapiro-Wilk para normalidad de los residuos:\n")
+print(shapiro_test)
+```
+
+La prueba de Shapiro-Wilk fue aplicada a los residuos del modelo para evaluar si siguen una distribución normal. Los resultados obtenidos son:
+
+-   Estadístico W = 0.78432
+-   p-valor \< 2.2e-16
+
+Dado que el p-valor es significativamente menor a 0.05, se rechaza la hipótesis nula de normalidad. Esto confirma que los residuos no siguen una distribución normal, lo que puede afectar la validez de los intervalos de confianza y las pruebas de hipótesis del modelo.
+
+**Gráfico de residuos vs. una variable predictora **
+
+```{r}
+# Gráfico de residuos vs. like
+plot(train_clean$like, residuos,
+     main = "Residuos vs Like",
+     xlab = "Like",
+     ylab = "Residuos",
+     pch = 19, col = "purple")
+abline(h = 0, col = "red", lwd = 2)
+```
+
+Este gráfico permite evaluar la relación entre los residuos y la variable predictora "Like". Se observa que los residuos no están distribuidos aleatoriamente, sino que presentan un patrón en forma de abanico, lo que nuevamente sugiere heterocedasticidad. La varianza de los residuos parece aumentar a medida que crecen los valores de "Like", lo que podría indicar que la relación entre las variables no es completamente lineal o que existe una influencia de valores atípicos.
+
+#### 5: Diagnóstico del modelo
+
+**Prueba de homocedasticidad (Breusch-Pagan)**
+
+```{r}
+
+# 2. Prueba de homocedasticidad (Breusch-Pagan)
+breusch_pagan <- bptest(modelo)
+cat("\nPrueba de Breusch-Pagan para homocedasticidad:\n")
+print(breusch_pagan)
+
+```
+
+La prueba de Breusch-Pagan se utiliza para evaluar si los residuos del modelo tienen varianza constante (homocedasticidad) o si, por el contrario, presentan heterocedasticidad (varianza no constante).
+
+Resultados obtenidos: + Estadístico BP = 128.12 + Grados de libertad (df) = 1 + p-valor \< 2.2e-16 Interpretación:
+
+-   El p-valor es extremadamente pequeño (\< 0.05), lo que indica que se rechaza la hipótesis nula de homocedasticidad.
+-   Esto significa que existe heterocedasticidad en los residuos, es decir, la varianza de los errores no es constante a lo largo de los valores de la variable predictora.
+
+**Prueba de autocorrelación (Durbin-Watson)**
+
+```{r}
+
+# 3. Estadística Durbin-Watson para autocorrelación de los residuos
+durbin_watson <- dwtest(modelo)
+cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
+print(durbin_watson)
+```
+
+La prueba de Durbin-Watson se emplea para detectar la presencia de autocorrelación en los residuos, es decir, si los errores están correlacionados en función del orden de las observaciones.
+
+Resultados obtenidos:
+
+-   Estadístico DW = 1.7823
+-   p-valor = 0.04265
+-   Hipótesis alternativa: Existe autocorrelación positiva en los residuos. Interpretación:
+
+El estadístico Durbin-Watson cercano a 2 indica que no hay una autocorrelación fuerte. Sin embargo, el p-valor de 0.04265 es menor a 0.05, lo que sugiere la presencia de una autocorrelación positiva débil en los residuos. La autocorrelación de los errores puede indicar que hay una relación no capturada en el modelo o que las observaciones no son completamente independientes.
+
+#### 6: Leverage y observaciones influyentes
+
+```{r}
+# Calcular leverage
+leverage <- hatvalues(modelo)
+
+# Umbral para leverage alto
+p <- length(coef(modelo))  # Número de parámetros (incluyendo el intercepto)
+n <- nrow(train)  # Número de observaciones
+leverage_threshold <- 2 * p / n
+
+# Identificar observaciones con leverage alto
+leverage_high <- which(leverage > leverage_threshold)
+
+# Resultados
+cat("Valores de leverage:\n")
+print(leverage)
+cat("\nUmbral para leverage alto:", leverage_threshold, "\n")
+cat("\nObservaciones con leverage alto (si las hay):\n")
+print(leverage_high)
+
+
+```
+
+Se calculó el umbral para identificar leverage alto como: 0.016 e identificaron 14 observaciones que superan el umbral de leverage alto. Estas observaciones son: 1,18,70,84,95,115,146,170,177,183,191,205,219,240 En el gráfico de leverage, estas observaciones están señalizadas con el núemro en rojo.
+
+```{r}
+# Gráfico de leverage
+plot(leverage, 
+     main = "Leverage de las Observaciones",
+     xlab = "Índice de Observación",
+     ylab = "Leverage",
+     pch = 19, col = "blue", ylim=c(min(leverage)*.9,max(leverage)*1.05))
+abline(h = leverage_threshold, col = "red", lwd = 2, lty = 2)  # Línea del umbral
+text(leverage_high, leverage[leverage_high], labels = leverage_high, pos = 3, col = "red")
+```
+
+#### 7: Distancia de Cook, DFBETAS y DFFITS
+
+```{r}
+
+# 1. Calcular Distancia de Cook
+cooks_distance <- cooks.distance(modelo)
+
+# 2. Calcular DFBETAS
+dfbetas_values <- dfbetas(modelo)
+
+# 3. Calcular DFFITS
+dffits_values <- dffits(modelo)
+
+# Umbrales sugeridos
+cooks_threshold <- 4 / n  # Umbral para Distancia de Cook
+dffits_threshold <- 2 * sqrt(p / n)  # Umbral para DFFITS
+
+# Resultados
+cat("Distancia de Cook (primeras 10 observaciones):\n")
+print(head(cooks_distance, 10))
+cat("\nObservaciones con Distancia de Cook alta (> ", cooks_threshold, "):\n")
+print(which(cooks_distance > cooks_threshold))
+cat("\nDFBETAS (primeras 10 observaciones):\n")
+print(head(dfbetas_values, 10))
+cat("\nDFFITS (primeras 10 observaciones):\n")
+print(head(dffits_values, 10))
+cat("\nObservaciones con DFFITS alto (> ", dffits_threshold, "):\n")
+print(which(abs(dffits_values) > dffits_threshold))
+```
+
+Observaciones con **Distancia de Cook** alta:
+
+1,11,30,31,67,70,95,115,128,183,191,204,205,209,219 
+
+Estas observaciones tienen una influencia significativa en el modelo. En el gráfico, las observaciones destacadas en rojo superan el umbral y podrían estar afectando los coeficientes de la regresión.
+
+Observaciones con **DFFITS** alto:
+
+1,11,30,31,67,70,95,115,128,183,191,204,205,209,219 
+
+Estas observaciones tienen un gran impacto en la predicción individual de la variable dependiente. En el gráfico, las observaciones con valores extremos de DFFITS están resaltadas en rojo.
+
+Los valores de **DFBETAS** indican que algunas observaciones tienen un impacto significativo en los coeficientes del modelo. En particular:la observación 1 tiene un DFBETAS alto en el intercepto y la variable "like", lo que indica que al removerla, los coeficientes cambiarían notablemente.
+
+**Grafica Distancia de Cook**
+
+```{r}
+# Graficar Distancia de Cook
+plot(cooks_distance,
+     main = "Distancia de Cook",
+     xlab = "Índice de Observación",
+     ylab = "Distancia de Cook",
+     pch = 19, col = "blue", ylim=c(min(cooks_distance)*.9,max(cooks_distance)*1.05))
+abline(h = cooks_threshold, col = "red", lwd = 2, lty = 2)
+text(which(cooks_distance > cooks_threshold), cooks_distance[cooks_distance > cooks_threshold],
+     labels = which(cooks_distance > cooks_threshold), pos = 3, col = "red")
+
+```
+
+**Grafica DFFITS**
+
+```{r}
+# Graficar DFFITS
+plot(dffits_values,
+     main = "DFFITS",
+     xlab = "Índice de Observación",
+     ylab = "DFFITS",
+     pch = 19, col = "green", ylim=c(min(dffits_values)*.85,max(dffits_values)*1.07))
+abline(h = c(dffits_threshold, -dffits_threshold), col = "red", lwd = 2, lty = 2)
+text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_values) > dffits_threshold],
+     labels = which(abs(dffits_values) > dffits_threshold), pos = 3, col = "red")
+
+```
+
+### Regresión lineal simple con Lifetime Post Impressions by people who have liked your Page 
+
+#### 1: Ajustar el modelo de regresión lineal
+```{r}
+# Ajustar el modelo de regresión lineal
+modelo2 <- lm(`Total Interactions` ~ `Lifetime Post Impressions by people who have liked your Page`, data = train_clean)
+
+# Obtener estimadores de los parámetros y errores estándar
+estimadores <- coef(summary(modelo2))  # Incluye estimadores y errores estándar
+
+# Imprimir los resultados
+cat("Estimadores para los parámetros del modelo:\n")
+print(estimadores)
+```
+El modelo de regresión lineal ajustado entre la variable dependiente Total Interactions y la variable independiente Lifetime Post Impressions by people who have liked your Page revela una relación positiva y estadísticamente significativa. 
+El intercepto estimado es de 139.81, lo que indica que, incluso cuando el número de impresiones es cero, el modelo predice un valor base de 139.81 interacciones. Este intercepto es relevante y significativo, con un estadístico t de 10.97 y un p-valor extremadamente pequeño (4.61 × 10⁻²³), lo que confirma su contribución al modelo. 
+Por su parte, el coeficiente estimado para la variable de impresiones es de 0.0032, lo que implica que un aumento de una unidad en las impresiones acumuladas genera, en promedio, un incremento de 0.0032 en las interacciones totales. Aunque el valor del coeficiente parece pequeño, es relevante, ya que las impresiones suelen contarse en grandes cantidades; por ejemplo, un aumento de 1,000 impresiones incrementaría las interacciones en aproximadamente 3.2. La precisión de esta estimación es alta, como lo refleja su pequeño error estándar (0.0002755), y su significancia estadística es contundente, con un estadístico t de 11.68 y un p-valor de 2.37 × 10⁻²⁵.
+En conclusión, el análisis muestra que existe una relación sólida, positiva y significativa entre las impresiones acumuladas de la publicación y el nivel de interacción, lo que sugiere que aumentar las impresiones puede contribuir de manera efectiva a potenciar las interacciones totales en la página.
+
+#### 2: Resumen del modelo
+```{r}
+# Obtener resumen del modelo
+summary(modelo2)
+```
+
+#### 3: Tabla ANOVA
+```{r}
+# Obtener y mostrar la tabla ANOVA
+tabla_anova <- anova(modelo2)
+cat("\nTabla ANOVA:\n")
+print(tabla_anova)
+
+```
+La variable explicativa presenta 1 grado de libertad y una suma de cuadrados (Sum Sq) de 4,887,393, lo que refleja la variabilidad explicada por las impresiones en el modelo. 
+El cuadrado medio correspondiente (Mean Sq) es también de 4,887,393. 
+El estadístico F obtenido es de 136.44, lo que indica una relación altamente significativa entre las impresiones acumuladas y las interacciones totales. 
+Este resultado queda corroborado por un p-valor inferior a 2.2 × 10⁻¹⁶, lo que confirma la hipótesis de que esta variable independiente contribuye significativamente al modelo. 
+Por otro lado, los residuos, con 245 grados de libertad, acumulan una suma de cuadrados de 8,776,303, y el cuadrado medio residual (Mean Sq Residuals) es de 35,822. La magnitud de estos resultados pone de manifiesto que una parte sustancial de la variabilidad de las interacciones puede ser explicada por las impresiones acumuladas de la página, evidenciando una asociación sólida y significativa entre ambas variables.
+
+
+#### 4: Estudiar los residuos
+
+**Gráfico de residuos vs. valores ajustados**
+```{r}
+# Obtener los residuos
+residuos <- resid(modelo2)
+
+# 1. Gráfico de residuos vs. valores ajustados
+valores_ajustados <- fitted(modelo2)
+plot(valores_ajustados, residuos,
+     main = "Residuos vs Valores Ajustados",
+     xlab = "Valores Ajustados",
+     ylab = "Residuos",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+
+```
+
+El gráfico muestra la relación entre los residuos y los valores ajustados. Para que el modelo de regresión sea adecuado, es necesario que los residuos se dispersen aleatoriamente alrededor de la línea horizontal en 0. En este caso, la mayoría de los puntos están concentrados cerca de 0, lo que sugiere que no hay un patrón claro, aunque existen algunos valores atípicos alejados de esta línea. Esto podría indicar una ligera desviación de homocedasticidad o la posible presencia de valores influyentes.
+
+
+
+
+**Histograma de los residuos:**
+```{r}
+# 2. Histograma de los residuos
+hist(residuos,
+     main = "Histograma de Residuos",
+     xlab = "Residuos",
+     col = "lightblue", border = "black")
+
+```
+
+El histograma ilustra la distribución de los residuos. Para que el supuesto de normalidad de los residuos se cumpla, esta distribución debería aproximarse a una campana simétrica (distribución normal). Aunque hay cierta concentración de valores cercanos a cero, la distribución presenta una ligera asimetría hacia valores positivos, lo que sugiere una posible desviación de la normalidad.
+
+
+**QQ-Plot de residuos:**
+```{r}
+# 3. QQ-Plot de residuos
+qqnorm(residuos, main = "QQ-Plot de los Residuos")
+qqline(residuos, col = "red", lwd = 2)
+
+```
+
+El QQ-Plot compara los cuantiles teóricos de una distribución normal con los cuantiles observados de los residuos. Si los residuos siguen una distribución normal, los puntos deberían alinearse aproximadamente a lo largo de la línea roja. En este caso, se observa que en los extremos hay desviaciones respecto a la línea teórica, lo que evidencia que los residuos no son perfectamente normales y puede haber colas más gruesas o valores atípicos.
+
+
+
+**Pruebas de normalidad de los residuos:**
+
+```{r}
+# 4. Pruebas de normalidad de los residuos
+shapiro_test <- shapiro.test(residuos)
+cat("Prueba de Shapiro-Wilk para normalidad de los residuos:\n")
+print(shapiro_test)
+
+```
+
+Estos resultados indican que los residuos del modelo no siguen una distribución normal. Esto puede afectar la validez de ciertos supuestos del modelo de regresión lineal, como la aplicabilidad de pruebas estadísticas que asumen normalidad en los errores. La falta de normalidad en los residuos puede estar relacionada con la presencia de valores atípicos, heterocedasticidad, o una incorrecta especificación del modelo. 
+
+
+**Gráfico de residuos vs. la variable predictora:**
+```{r}
+# Gráfico de residuos vs. 'Lifetime Post Impressions by people who have liked your Page'
+plot(train_clean$`Lifetime Post Impressions by people who have liked your Page`, residuos,
+     main = "Residuos vs Lifetime Post Impressions",
+     xlab = "Lifetime Post Impressions by people who have liked your Page",
+     ylab = "Residuos",
+     pch = 19, col = "purple")
+abline(h = 0, col = "red", lwd = 2)
+
+```
+
+El gráfico muestra la relación entre los residuos y la variable independiente. La distribución de puntos debería ser aleatoria y no mostrar patrones claros si el supuesto de homocedasticidad se cumple. Aunque la mayoría de los puntos están distribuidos de manera uniforme, hay algunos valores alejados que podrían estar afectando la calidad del ajuste, lo que apunta a la posible existencia de heterocedasticidad o valores influyentes.
+
+
+
+#### 5: Diagnóstico del modelo
+
+**Prueba de homocedasticidad (Breusch-Pagan):**
+
+```{r}
+breusch_pagan <- bptest(modelo2)
+cat("\nPrueba de Breusch-Pagan para homocedasticidad:\n")
+print(breusch_pagan)
+
+```
+Dado que el p-value (0.009855) es menor que un nivel de significancia típico (α = 0.05), se rechaza la hipótesis nula de homocedasticidad. Esto sugiere la presencia de heterocedasticidad en los residuos, lo cual puede indicar que la varianza de los errores no es constante.
+
+
+**Prueba de autocorrelación (Durbin-Watson):**
+```{r}
+# Prueba Durbin-Watson para autocorrelación de los residuos
+durbin_watson <- dwtest(modelo2)
+cat("\nPrueba de Durbin-Watson para autocorrelación de los residuos:\n")
+print(durbin_watson)
+
+```
+
+El valor del estadístico DW cercano a 2 sugiere ausencia de autocorrelación significativa en los residuos. Además, el p-value (0.5721) es mucho mayor que 0.05, lo que lleva a no rechazar la hipótesis nula de ausencia de autocorrelación. Esto indica que los residuos son independientes entre sí.
+
+
+
+#### 6: Leverage y observaciones influyentes
+```{r}
+# Calcular leverage
+leverage <- hatvalues(modelo2)
+
+# Umbral para leverage alto
+p <- length(coef(modelo2))  # Número de parámetros (incluyendo el intercepto)
+n <- nrow(train)  # Número de observaciones
+leverage_threshold <- 2 * p / n
+
+# Identificar observaciones con leverage alto
+leverage_high <- which(leverage > leverage_threshold)
+
+# Resultados
+cat("Valores de leverage:\n")
+print(leverage)
+cat("\nUmbral para leverage alto:", leverage_threshold, "\n")
+cat("\nObservaciones con leverage alto (si las hay):\n")
+print(leverage_high)
+
+```
+
+
+```{r}
+#Grafico
+plot(leverage, 
+     main = "Leverage de las Observaciones",
+     xlab = "Índice de Observación",
+     ylab = "Leverage",
+     pch = 19, col = "blue", ylim=c(min(leverage)*.9,max(leverage)*1.05))
+abline(h = leverage_threshold, col = "red", lwd = 2, lty = 2)  # Línea del umbral
+text(leverage_high, leverage[leverage_high], labels = leverage_high, pos = 3, col = "red")
+
+```
+
+Las observaciones que exceden este umbral y, por tanto, tienen un leverage alto son: 119, 183, 205, y 232.
+
+Estas observaciones tienen un leverage superior al umbral de 0.016, lo que indica que tienen una mayor capacidad para influir en el ajuste del modelo de regresión. Esto puede ser un indicio de valores atípicos (outliers) o puntos con características extremas que pueden distorsionar los coeficientes estimados.
+
+
+#### 7: Distancia de Cook, DFBETAS y DFFITS
+```{r}
+# 1. Calcular Distancia de Cook
+cooks_distance <- cooks.distance(modelo2)
+
+# 2. Calcular DFBETAS
+dfbetas_values <- dfbetas(modelo2)
+
+# 3. Calcular DFFITS
+dffits_values <- dffits(modelo2)
+
+# Umbrales sugeridos
+cooks_threshold <- 4 / n  # Umbral para Distancia de Cook
+dffits_threshold <- 2 * sqrt(p / n)  # Umbral para DFFITS
+
+# Resultados
+cat("Distancia de Cook (primeras 10 observaciones):\n")
+print(head(cooks_distance, 10))
+cat("\nObservaciones con Distancia de Cook alta (> ", cooks_threshold, "):\n")
+print(which(cooks_distance > cooks_threshold))
+cat("\nDFBETAS (primeras 10 observaciones):\n")
+print(head(dfbetas_values, 10))
+cat("\nDFFITS (primeras 10 observaciones):\n")
+print(head(dffits_values, 10))
+cat("\nObservaciones con DFFITS alto (> ", dffits_threshold, "):\n")
+print(which(abs(dffits_values) > dffits_threshold))
+
+```
+**La Distancia de Cook** mide la influencia de cada observación en los coeficientes del modelo. Se calculó este valor para todas las observaciones y se identificaron aquellas que superan el umbral de 0.016 (calculado como 4/n, donde n es el número total de observaciones).
+
+  - Primeras 10 observaciones: Los valores de la Distancia de Cook muestran que, en general, la mayoría de los puntos tienen una influencia moderada.
+
+  - Observaciones influyentes: Se identificaron las siguientes observaciones con una Distancia de Cook alta: 1, 70, 95, 115, 119, 146, 183 y 205. Estas observaciones podrían estar afectando de manera significativa los coeficientes del modelo y deberían ser revisadas más a fondo.
+
+
+
+El **DFBETAS** mide cuánto cambia un coeficiente si se elimina una observación específica. Se calcularon los valores para el intercepto y la variable predictora.
+  
+  - En las primeras 10 observaciones, los valores de DFBETAS varían en torno a 0, lo que sugiere que estas observaciones no afectan drásticamente los coeficientes.
+  
+  - Sin embargo, algunas observaciones tienen valores de DFBETAS relativamente altos, lo que indica que podrían estar afectando la estimación del coeficiente de la variable predictora.
+
+
+El **DFFITS** mide cuánto cambia el valor ajustado de una observación cuando esta se elimina del modelo. Se calcularon los valores y se identificaron observaciones con valores altos en comparación con el umbral de 0.1789 (calculado como dos por la raiz de p entre n, donde p es el número de parámetros en el modelo).
+  
+  - Primeras 10 observaciones: En general, los valores son bajos, lo que indica una influencia moderada en los valores ajustados.
+
+  - Observaciones con DFFITS alto: Se identificaron las siguientes observaciones con valores de DFFITS superiores al umbral: 1, 70, 95, 115, 119, 146, 183, 191 y 205. Estas observaciones podrían estar afectando de manera desproporcionada las predicciones del modelo.
+
+
+
+**Gráfico de Distancia de Cook:**
+```{r}
+plot(cooks_distance,
+     main = "Distancia de Cook",
+     xlab = "Índice de Observación",
+     ylab = "Distancia de Cook",
+     pch = 19, col = "blue", ylim=c(min(cooks_distance)*.9,max(cooks_distance)*1.05))
+abline(h = cooks_threshold, col = "red", lwd = 2, lty = 2)
+text(which(cooks_distance > cooks_threshold), cooks_distance[cooks_distance > cooks_threshold],
+     labels = which(cooks_distance > cooks_threshold), pos = 3, col = "red")
+
+```
+
+
+
+**Gráfico de DFFITS:**
+```{r}
+plot(dffits_values,
+     main = "DFFITS",
+     xlab = "Índice de Observación",
+     ylab = "DFFITS",
+     pch = 19, col = "green", ylim=c(min(dffits_values)*.85,max(dffits_values)*1.07))
+abline(h = c(dffits_threshold, -dffits_threshold), col = "red", lwd = 2, lty = 2)
+text(which(abs(dffits_values) > dffits_threshold), dffits_values[abs(dffits_values) > dffits_threshold],
+     labels = which(abs(dffits_values) > dffits_threshold), pos = 3, col = "red")
+
+```
+
+### Conclusión
+
+Como era obvio, el mejor modelo de estos dos sería el que usa la variable Like. Esto ya lo podíamos suponer debido a que nuestra variable objetivo es la suma de tres variables, entre ellas likes.
+También hemos observado que en términos de ajuste (R² más alto) y precisión (error residual más bajo), el segundo modelo no es demasiado bueno. Observando de nuevo todas nuestras variables, creemos que podría ser interesante probar con la variable "Lifetime Post reach by people who like your Page", ya que esta era una de las variables con mayor correlación.
+
+
+
+## Regresión lineal múltiple 
+
+### 1: Ajuste del modelo de Regresión Lineal Múltiple
+
+Ajustamos un modelo de regresión lineal múltiple para predecir el número total de interacciones (Total Interactions) en función de todas las variables disponibles, excepto like, comment y share, ya que 'Total Interactions' es la suma de estas tres.
+
+```{r}
+# Ajustar el modelo de regresión lineal múltiple
+modelo_facebook <- lm(`Total Interactions` ~ .-comment -like -share, data = train_clean)
+
+# Mostrar el resumen del modelo
+summary(modelo_facebook)
+
+```
+El modelo es bastante fuerte.Un R² de 0,9555 implica que explica bien la variabilidad en las interacciones, lo que indica que los factores incluidos en el modelo son relevantes.
+
+El p-valor de cada variable permite identificar qué variables son estadísticamente significativas. Cuanto menor sea el p-valor, más significativa será esa variable a la hora de predecir el número total de interacciones.
+
+Lifetime Post Consumers, Lifetime Engaged Users y Lifetime Post Total Impressions son muy significativas, ya que su p-valor es prácticamente 0. 
+
+En cambio, vemos que Post Weekday y Post Hour tienen un p-valor > 0,05 lo que implica que no son significativas. De hecho son las menos significativas, ya que tienen el p-valor más alto. Esto quiere decir que el día y la hora en que se publica no influye en las interacciones. 
+
+
+### 2: Selección de variables para optimizar el modelo
+```{r}
+# Método Stepwise para selección de variables
+modelo_stepwise <- step(modelo_facebook, direction = "both", trace = 0)
+
+# Resumen del modelo optimizado
+summary(modelo_stepwise)
+```
+
+Hemos optimizado el modelo mediante el método Stepwise. Con este método se han eliminado variables que no aportaban significativamente a la predicción de la variable objetivo, como Post Weekday, Post Hour, Paid y Lifetime Post Consumptions
+
+Se mantiene un R² ajustado de 0.9551, lo que significa que el modelo sigue explicando muy bien la variabilidad de las interacciones totales. También se mantiene cuáles son las variables mas significativas.
+
+### 3: Evaluación del modelo con Validación Cruzada
+
+Usaremos validación cruzada k-fold para evaluar la capacidad predictiva del modelo. Dividiremos el conjunto de datos en 10 particiones (folds), utilizando 9 para entrenar y 1 para probar, repitiendo este proceso 10 veces.
+
+```{r}
+set.seed(123)
+
+# Configuración de la validación cruzada de 10-fold
+control <- trainControl(method = "cv", number = 10)
+
+# Ajuste del modelo con validación cruzada usando caret
+modelo_cv <- train(`Total Interactions` ~ .-comment -like -share,  # Usar backticks si hay espacios
+                   data = train_clean, 
+                   method = "lm", 
+                   trControl = control)
+
+# Resultados de la validación cruzada
+print(modelo_cv)
+
+```
+La salida muestra métricas como el RMSE (Root Mean Squared Error) y el R², que miden la capacidad del modelo para predecir correctamente el consumo de combustible. Un RMSE bajo y un R² alto indican un buen rendimiento del modelo.
+
+En este caso vemos que el tamaño de las muestras en cada iteración varía ligeramente entre 222 y 223 observaciones.
+
+R² = 0.9157515 significa que el 91,57% de la variabilidad en las interacciones es explicada por las variables incluidas en el modelo. Esto sugiere un modelo bastante fuerte, aunque no perfecto.
+
+RMSE representa el error promedio en la prediccion. En este caso, RMSE = 63.44806 indica que la predicción del número total de interacciones tiene una desviación de aproximadamente 63 interacciones respecto a los valores reales.
+
+MAE representa el error absoluto medio. Tenemos un MAE = 38.92529, lo que indica que el modelo se equivoca por aproximadamente 39 interacciones al predecir.
+`
+
+### 4: Análisis de residuos
+
+```{r}
+# Residuals vs Fitted
+plot(modelo_facebook, which = 1) 
+```
+
+El gráfico de residuals vs Fitted (Residuos vs Valores Ajustados) muestra si los residuos presentan algún patrón sistemático en función de los valores ajustados. En un buen modelo, los residuos deberían estar dispersos alrededor de la línea horizontal (en 0). En cambio, parece haber una ligera curva en los residuos, especialmente en valores más altos.
+
+```{r}
+# Q-Q Plot
+plot(modelo_facebook, which = 2) 
+```
+
+El QQ-plot ayuda a verificar si los residuos siguen una distribución normal. En ese caso, los puntos deberíann alinearse en la diagonal punteada. Vemos que en los valores extremos, los puntos se desvían bastante de la línea diagonal. Esto sugiere que los residuos no son perfectamente normales y que hay valores atípicos.
+
+```{r}
+ # Scale-Location
+plot(modelo_facebook, which = 3)
+```
+
+El gráfico Scale-Location evalúa si la varianza de los residuos es constante. Observamos que hay cierta tendencia ascendente, lo que sugiere  heterocedasticidad, es decir, los residuos no tienen una varianza constante.
+
+```{r}
+# Residuals vs Leverage
+plot(modelo_facebook, which = 5) 
+```
+
+Por último, el gráfico Residuals vs Leverage ayuda a identificar puntos atípicos e influyentes en el modelo. Hay algunos puntos con leverage alto y residuos grandes, lo que sugiere que pueden ser valores atípicos o datos muy influyentes en el modelo.
+
+
+```{r}
+# Prueba de normalidad de los residuos
+shapiro.test(residuals(modelo_facebook))
+```
+
+La prueba de Shapiro-Wilk evalúa la normalidad de los residuos, al igual que el Q-Q Plot anterior.
+
+La hipótesis nula (H0) establece que los residuos siguen una distribución normal.
+
+Hemos obtenido un p-valor = 1.989e-14. Como el p-valor es menor que 0.05, tenemos suficiente evidencia estadística para rechazar la hipótesis nula. Esto indica que los residuos NO siguen una distribución normal, confirmando lo que vimos con el Q-Q Plot.
+
+
+```{r}
+# Prueba de homocedasticidad (Breusch-Pagan)
+bptest(modelo_facebook)
+```
+
+La prueba de Breusch-Pagan verifica la homocedasticidad de los residuos, es decir, si la varianza de los errores es constant, al igual que el gráfico Scale-Location.
+
+La hipótesis nula (H0) establece que los residuos tienen varianza constante (homocedasticidad).
+
+Hemos obtenido un p-valor < 2.2e-16. Como el p-valor es menor que 0.05, tenemos suficiente evidencia estadística para rechazar la hipótesis nula. Esto sugiere que los residuos NO tienen varianza constante, es decir, existe heterocedasticidad en el modelo.
+
+
+### 5: Diagnóstico de Multicolinealidad y observaciones influyentes
+
+La multicolinealidad puede afectar la estabilidad de los coeficientes del modelo. Además, es importante identificar observaciones influyentes que puedan distorsionar los resultados.
+
+
+```{r}
+# Diagnóstico de multicolinealidad usando el VIF (Variance Inflation Factor)
+vif(modelo_facebook)
+```
+Un VIF mayor que 5 indica la presencia de multicolinealidad.
+
+Las variables con más alta multicolinealidad son 'Lifetime Engaged Users' y 'Lifetime Post Consumers'. Esto indica que estas variables están fuertemente correlacionadas con otras predictores, lo que puede distorsionar los coeficientes y afectar la estabilidad del modelo.
+
+
+```{r}
+# Identificación de observaciones influyentes utilizando la distancia de Cook
+influencia <- cooks.distance(modelo_facebook)
+
+# Visualización de observaciones influyentes
+plot(influencia, type = "h", main = "Distancia de Cook", ylab = "Influencia")
+abline(h = 4/(nrow(train) - length(modelo_facebook$coefficients)), col = "red")
+
+```
+
+La distancia de Cook permite identificar observaciones que tienen una gran influencia en los resultados del modelo. La observación alrededor del índice 200 es la más influyente, ya que tiene una Distancia de Cook considerablemente mayor que el resto.
+
+
+## Conclusión
+
+Vemos que de todas las variables que tiene nuestros datos, no todas influyen a la hora de predecir la variable objetivo 'Total interactions'. El modelo de regresión lineal múltiple explica bien las interacciones en Facebook, aunque existen algunos problemas de multicolinealidad y residuos.
+
+Para mejorar el modelo podemos aplicar transformaciones logarítmicas en la variable de respuesta o Utilizar un modelo Ridge o Lasso para reducir la multicolinealidad, tal y como haremos a continuación.
+
+
+# Métodos de selección de variables y problemas de regularización 
+
+A la hora de realizar la selección de variables hemos quitado las variables "comment", "like" y "share", ya que nuestro target es el resultado de la suma de estas tres variables.
+
+## Ridge 
+
+Ridge Regression es un método de regularización que aplica una penalización proporcional al cuadrado de los coeficientes, lo que permite manejar problemas de multicolinealidad pero no conduce a la eliminación completa de variables.
+
+```{r}
+
+# Eliminar filas con valores NA
+train_clean <- na.omit(train)
+
+# Variable objetivo
+Y <- train_clean$`Total Interactions` 
+
+# Primero, excluimos las variables "comment", "like" y "share"
+train_clean_filtered <- train_clean[, !names(train_clean) %in% c("comment", "like", "share")]
+
+# Realizamos el one-hot encoding para las variables categóricas
+# Convertimos variables categóricas en dummies (one-hot encoding)
+X1 <- model.matrix(`Total Interactions` ~ ., data = train_clean_filtered)[, -1]  # Quitar la intersección
+
+# Ajustar modelo Ridge (alpha = 0 para Ridge)
+modelo_ridge <- glmnet(X1, Y, alpha = 0)
+
+# Seleccionar lambda óptimo con validación cruzada
+cv_ridge <- cv.glmnet(X1, Y, alpha = 0)
+lambda_optimo_r <- cv_ridge$lambda.min  # Mejor valor de lambda
+
+# Mostrar lambda óptimo
+print(lambda_optimo_r)
+
+```
+Lambda (λ) controla la penalización sobre los coeficientes del modelo.
+
+Un valor alto de λ indica que el modelo está restringiendo fuertemente los coeficientes para reducir el sobreajuste. Un valor bajo de λ haría que el modelo sea similar a una regresión lineal sin penalización.
+
+En este caso, 20.53711 es el valor de λ que mejor equilibra la reducción de sobreajuste sin perder demasiada capacidad predictiva. Esto sugiere que hay variables altamente correlacionadas, y la regularización es necesaria para estabilizar los coeficientes.
+
+```{r}
+# Ajustar modelo final con lambda óptimo
+modelo_ridge_final <- glmnet(X1, Y, alpha = 0, lambda = lambda_optimo_r)
+
+modelo_ridge_final
+```
+El modelo Ridge con lambda = 23.43 retiene 21 predictores y logra explicar el 98.83% de la variabilidad en la variable objetivo, lo que indica un buen ajuste.
+
+```{r}
+# Comparación modelo clásico
+
+modelo_lm <- lm(Y~X1)
+
+# Mostrar coeficientes
+output=cbind(round(coef(modelo_ridge_final),3),
+            round(coef(modelo_lm),3))
+
+colnames(output)=c("RIDGE","OLS")
+
+output
+```
+Vemos que OLS no genera coeficientes para muchas variables, lo que indica que el modelo puede estar inestable o mal ajustado. En cambio Ridge logra un modelo más estable y menos susceptible a la multicolinealidad, reduciendo coeficientes sin eliminarlos por completo.
+
+
+
+## LASSO 
+
+El modelo Lasso (Least Absolute Shrinkage and Selection Operator) es una técnica de regresión que introduce penalización sobre la magnitud de los coeficientes de los predictores. Esto tiene como efecto reducir algunos coeficientes a cero, logrando una selección automática de variables y evitando problemas de sobreajuste.
+
+```{r}
+# Ajustar el modelo Lasso
+modelo_lasso <- glmnet(X1, Y, alpha = 1)
+
+# Seleccionar el mejor lambda usando validación cruzada
+cv_lasso <- cv.glmnet(X1, Y, alpha = 1)
+lambda_optimo <- cv_lasso$lambda.min  # Mejor valor de lambda
+
+# Ajustar modelo final con lambda óptimo
+modelo_lasso_final <- glmnet(X1, Y, alpha = 1, lambda = lambda_optimo)
+
+# Mostrar coeficientes del modelo
+coeficientes_lasso <- coef(modelo_lasso_final)
+print(coeficientes_lasso)
+
+
+```
+El parámetro lambda controla la fuerza de la penalización en el modelo. Aquí, utilizamos la validación cruzada para encontrar el valor óptimo de λ, el cual minimiza el error de validación. El valor óptimo encontrado es $λ=$`r lambda_optimo`, que se usó para ajustar el modelo final.  
+
+La salida muestra los coeficientes estimados por el modelo Lasso ajustado. Las variables con coeficientes cero (.) fueron eliminadas del modelo por el efecto de la penalización de Lasso, mientras que aquellas que mantienen un valor distinto de cero son las variables seleccionadas como más relevantes para explicar la variable dependiente Y.
+
+Variables seleccionadas (con coeficientes distintos de cero):
+
+  - TypePhoto: -16.56 → Publicar fotos tiene un impacto negativo en la variable objetivo.
+  
+  - TypeStatus: -46.73 → Publicar solo un estado reduce considerablemente la respuesta esperada.
+  
+  - TypeVideo: +19.30 → Publicar videos tiene un impacto positivo significativo.
+  
+  - Category2 y Category3: +25.09 y +23.70 → Estas categorías específicas también contribuyen positivamente.
+  
+  - Paid: +8.99 → Realizar publicaciones pagadas mejora la respuesta esperada.
+  
+  - Lifetime Engaged Users: +1.18 → Incrementos en esta métrica aumentan la respuesta del modelo.
+  
+  - Lifetime Post Impressions by people who have liked your Page: +0.000526 → Pequeño impacto positivo.
+  
+  - Lifetime Post reach by people who like your Page: +0.000294 → Contribución positiva, aunque mínima.
+
+  - Lifetime Post Total Reach y Lifetime Post Total Impressions: -0.00144 y +0.000239 respectivamente, mostrando ligeros efectos opuestos.
+
+  - Post Month: -1.49 → Publicaciones en ciertos meses pueden tener un leve impacto negativo.
+  
+El modelo Lasso selecciona principalmente variables relacionadas con el tipo de publicación (Type), la categoría, el hecho de si la publicación fue pagada (Paid) y varias métricas de interacción y alcance como Lifetime Engaged Users y Lifetime Post Impressions by people who have liked your Page.
+
+Por otro lado, variables como Post Weekday, Post Hour, Lifetime Post Consumptions, y Lifetime People who have liked your Page and engaged with your post, han sido descartadas por su baja relevancia predictiva según el modelo.
+
+## Elastic Net
+La regresión Elastic Net es una técnica de regularización que combina las propiedades de Ridge y Lasso. Permite controlar simultáneamente la reducción de la magnitud de los coeficientes y la eliminación de variables irrelevantes.
+
+```{r}
+# Ajustar modelo Elastic Net
+modelo_elastic_net <- glmnet(X1, Y, alpha = 0.5)  # Alpha = 0.5 (50% Ridge, 50% Lasso)
+
+# Seleccionar lambda óptimo con validación cruzada
+cv_elastic_net <- cv.glmnet(X1, Y, alpha = 0.5)
+lambda_optimo_n <- cv_elastic_net$lambda.min  # Mejor valor de lambda
+
+print(lambda_optimo_n)
+```
+
+Hemos obtenido un λ = 0.03267639. Este es un valor relativamente bajo, lo que indica que la penalización no es muy fuerte.
+
+Esto sugiere que el modelo aún considera que muchas variables aportan información útil, por lo que no las está eliminando agresivamente. Se está aplicando una combinación equilibrada de Ridge (suaviza los coeficientes pero no los elimina) y Lasso (puede llevar coeficientes a 0 para selección de variables).
+
+
+```{r}
+# Ajustar modelo final con lambda óptimo
+modelo_elastic_final <- glmnet(X1, Y, alpha = 0.5, lambda = lambda_optimo_n)
+
+# Mostrar coeficientes
+output1=cbind(round(coef(modelo_elastic_final),3),output)
+
+colnames(output1)=c("ELASTIC","LASSO","RIDGE")
+
+output
+```
+
+## Conclusión
+
+Creemos que el modelo que deberíamos escoger es Elige Elastic Net.
+
+Motivos:
+  
+  - Nos interesa tener un balance entre eliminar algunas variables irrelevantes (como Lasso) y manejar correlaciones (como Ridge).
+  
+  - El lambda óptimo encontrado (0.03268) sugiere una penalización relativamente suave, lo que evita eliminar en exceso.
+  
+  - Sospechamos que hay multicolinealidad entre las variables predictoras.
+
+
+Sin embargo,si tuviesemos que priorizar la simplicidad extrema y quisiéramos centrarnos en muy pocas variables, Lasso podría ser suficiente.
+Por otro lado, si se prefiriese mantener tantas variables como sea posible sin interpretabilidad prioritaria, Ridge sería mejor opción.
+
+
+# Modelos no lineales
+## Modelo polinómico
+
+```{r}
+# Ajuste del modelo polinómico de grado 2
+modelo_polinomico <- lm(comment ~ poly(`Total Interactions`, 2), data = train)
+
+# Resumen del modelo
+summary(modelo_polinomico)
+
+# Diagnóstico del modelo
+plot(modelo_polinomico)
+
+# Visualización de la regresión polinómica
+# Ordenamos los valores de X para que la curva de la predicción sea suave
+x_ordenado <- train[order(train$`Total Interactions`), ]  # Ordenar datos
+predicciones <- predict(modelo_polinomico, newdata = x_ordenado)  # Predicciones ordenadas
+
+# Gráfico base con puntos
+plot(train$`Total Interactions`, train$comment, 
+     main = "Regresión Polinómica de Segundo Grado",
+     pch = 19, col = "blue", xlab = "Total Interactions", ylab = "Comment")
+
+# Agregar la línea de la regresión
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
+Aunque hay una tendencia general positiva entre Total Interactions y comment, la línea roja (modelo) no se ajusta bien a la dispersión de los datos.
+Se nota mucha variabilidad para valores bajos y medios de Total Interactions, lo que nos quiere decir que un polinomio de segundo grado no es suficiente para capturar la relación real.
+
+
+## Modelos de Regresión Exponencial y Logarítmica
+```{r}
+# Asegurar que los valores de 'Total Interactions' sean positivos para aplicar logaritmo
+train$`Total Interactions`[train$`Total Interactions` <= 0] <- 
+  min(train$`Total Interactions`[train$`Total Interactions` > 0]) * 0.5
+
+# Ajuste del modelo exponencial (transformación logarítmica)
+modelo_exponencial <- lm(log(`Total Interactions`) ~ like, data = train)
+
+# Ver resumen del modelo
+summary(modelo_exponencial)
+
+# Visualización: relación entre like y Total Interactions
+plot(train$like, train$`Total Interactions`,
+     main = "Regresión Exponencial",
+     pch = 19, col = "blue",
+     ylab = "Total Interactions", xlab = "like")
+
+# Predicciones para los valores reales de 'like'
+predicciones <- predict(modelo_exponencial, newdata = train)
+
+# Dibujar línea de predicción (transformación inversa de log)
+orden <- order(train$like)
+lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
+
+```
+Como podemos observar , la regresion exponencial no se ajusta muy bien en cuanto los likes van aumentando esto lo que indica es  que el modelo sobrestima las Total Interactions cuando like es muy alto.
+
+
+## Regresion spline
+```{r}
+# Ajuste del modelo spline con tus datos reales
+modelo_spline <- lm(train$`Lifetime Post Total Impressions` ~ bs(`Total Interactions`, knots = c(30, 60, 80)), data = train)
+
+# Ordenar los datos por 'Total Interactions' para graficar correctamente
+x_ordenado <- train[order(train$`Total Interactions`), ]
+
+# Predicciones basadas en el modelo ajustado
+predicciones <- predict(modelo_spline, newdata = x_ordenado)
+
+# Gráfico de dispersión con la curva spline
+plot(train$`Total Interactions`, train$`Lifetime Post Total Impressions`, 
+     main = "Regresión Spline", 
+     pch = 19, col = "blue", 
+     xlab = "Total Interactions", ylab = "Life time post tootal impressions")
+
+# Agregar la línea de regresión spline
+lines(x_ordenado$`Total Interactions`, predicciones, col = "red", lwd = 2)
+
+```
+Como nos muestra el gráfico podemos ver que la regresión spline se intenta ajustar a los modelos de una manera mas precisa ajustandose a los saltos de la variable.
+
+## Transformación de variables
+
+### Transformación logaritmica
+```{r}
+# Modelo lineal con transformación logarítmica de la variable objetivo
+modelo_log <- lm(log(train$`Total Interactions`) ~ like + comment + share, data = train)
+# Visualización: relación entre 'like' y 'Total interactions'
+plot(train$like, train$`Total interactions`,
+     main = "Transformación logarítmica del modelo",
+     pch = 19, col = "blue",
+     ylab = "Total interactions", xlab = "like")
+
+# Predicciones para los valores reales de 'like', 'comment' y 'share'
+predicciones <- predict(modelo_log, newdata = train)
+
+# Dibujar la curva ajustada (volviendo a escala original con exp)
+orden <- order(train$like)  # para que la línea quede ordenada
+lines(train$like[orden], exp(predicciones[orden]), col = "red", lwd = 2)
+
+
+```
+En este caso no mejora el ajuste del modelo de forma significativa. La gran dispersión de los datos sugiere que:
+El número de like no es un predictor fuerte por sí solo.
+
+### Transformación de Raíz cuadrada
+```{r}
+# Ajuste del modelo con transformación raíz cuadrada en la variable dependiente
+modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ like, data = train)
+
+# Ver resumen del modelo
+summary(modelo_sqrt)
+
+# Visualización: datos reales
+plot(train$like, train$`Total interactions`,
+     main = "Transformación SQRT",
+     pch = 19, col = "blue",
+     ylab = "Total interactions", xlab = "like")
+
+# Predicciones del modelo
+predicciones <- predict(modelo_sqrt, newdata = train)
+
+# Dibujar línea de predicción (transformando de nuevo al cuadrado)
+orden <- order(train$like)
+lines(train$like[orden], (predicciones[orden])^2, col = "red", lwd = 2)
+modelo_sqrt <- lm(sqrt(train$`Total Interactions`) ~ comment, data = train)
+
+```
+No logra ajustarse adecuadamente a la variabilidad de los datos. La línea de predicción subestima muchos valores y no capta la dispersión creciente. Por tanto, esta transformación no mejora significativamente el modelo respecto al ajuste lineal simple.
+
+### Transformación de Box-Cox
+```{r}
+# Asegurar que 'Total Interactions' sea estrictamente positiva
+if (min(train$`Total Interactions`) <= 0) {
+  train$`Total Interactions` <- train$`Total Interactions` + abs(min(train$`Total Interactions`)) + 1
+}
+
+# Ajustar un modelo lineal simple
+modelo_bc <- lm(`Total Interactions` ~ like, data = train)
+
+# Aplicar transformación de Box-Cox
+boxcox(modelo_bc,
+       lambda = seq(-2, 2, 0.1),
+       main = "Transformación de Box-Cox")
+
+```
+El valor óptimo de lambda ≈ 1 implica que no es necesario transformar la variable dependiente (Total Interactions), ya que:
+Lambda = 1 significa que el modelo lineal original con y sin transformar ya es adecuado.
+Otras transformaciones (como logarítmica, raíz cuadrada, inversa) no mejorarían significativamente el ajuste.
+Además, la curva del log-likelihood muestra un pico muy claro en λ = 1, y el intervalo de confianza del 95% (las líneas punteadas horizontales) incluye ese valor.
+Por lo tanto las tranformaciones anterioeres podemos decir que son innecesarias.
+
+# Ingeniería de características
+## Creación de una nueva variable. Variable de interacción
+```{r}
+
+# Crear nueva variable de interacción
+train$lifetime_share_interaccion <- train$`Lifetime Post Total Impressions` * train$share
+
+# Ajustar modelo con interacción
+modelo_interaccion <- lm(train$`Total Interactions` ~ `Lifetime Post Total Impressions` + share + lifetime_share_interaccion, data = train)
+
+# Ver resumen del modelo
+summary(modelo_interaccion)
+
+
+```
+El modelo que incluye la interacción entre Lifetime Post Total Impressions y share logra un R² ajustado de 0.6934, explicando aproximadamente el 69% de la variabilidad en Total Interactions. Las variables principales son significativas, pero la interacción no lo es (p = 0.28583), lo que sugiere que no aporta valor adicional al modelo. Además, el error estándar residual (130.2) es alto, indicando que el ajuste es inferior a otros modelos que hemos evaluado.
+
+## Selección y reduccion de variables
+
+```{r}
+train_limpio <- na.omit(train)
+# Crear modelo completo con todas las variables numéricas
+modelo_completo <- lm(`Total Interactions` ~ 
+  `Page total likes` + Category + `Post Month` + `Post Weekday` + `Post Hour` + Paid +
+  `Lifetime Post Total Reach` + `Lifetime Post Total Impressions` +
+  `Lifetime Engaged Users` + `Lifetime Post Consumers` + `Lifetime Post Consumptions` +
+  `Lifetime Post Impressions by people who have liked your Page` +
+  `Lifetime Post reach by people who like your Page` +
+  `Lifetime People who have liked your Page and engaged with your post`,
+  data = train_limpio)
+
+# Aplicar selección stepwise en ambas direcciones
+modelo_stepwise <- step(modelo_completo, direction = "both")
+  
+# Mostrar resumen del modelo seleccionado
+summary(modelo_stepwise)
+
+```
+Lo hemos hecho eliminando share , like y comment ya que la suma de estas es Total interactions , que es nuestro target. Y por tanto quedaría perfecto , y no nos aportaria nada al modelo.Lifetime Post Total Reach, Lifetime Post Total Impressions,Lifetime Engaged Users,Lifetime Post Consumers, podemos ver que son las que mas significancia tienen respecto a la variable respuesta .
+
+## Evaluar mejoras con métricas
+```{r}
+# Ver métrica para cada modelo
+
+summary(modelo_stepwise)$adj.r.squared
+
+
+AIC(modelo_stepwise)
+
+# Función para RMSE
+rmse <- function(modelo) {
+ sqrt(mean(residuals(modelo)^2))
+}
+
+
+rmse(modelo_stepwise)
+#Modelo stepwise
+print("MODELO STEPWISE")
+cat("R² ajustado:", summary(modelo_stepwise)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_stepwise), "\n")
+cat("RMSE:", rmse(modelo_stepwise), "\n")
+#Modelo lineal simple
+print("MODELO LINEAL SIMPLE")
+cat("R² ajustado:", summary(modelo)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo), "\n")
+cat("RMSE:", rmse(modelo), "\n")
+#Modelo polinomico
+print("MODELO POLINOMICO")
+cat("R² ajustado:", summary(modelo_polinomico)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_polinomico), "\n")
+cat("RMSE:", rmse(modelo_polinomico), "\n")
+
+# MODELO SPLINE
+print("MODELO SPLINE")
+cat("R² ajustado:", summary(modelo_spline)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_spline), "\n")
+cat("RMSE:", rmse(modelo_spline), "\n\n")
+
+# MODELO LOGARÍTMICO
+print("MODELO LOGARÍTMICO")
+cat("R² ajustado:", summary(modelo_log)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_log), "\n")
+cat("RMSE:", rmse(modelo_log), "\n\n")
+
+# MODELO RAÍZ CUADRADA (SQRT)
+print("MODELO SQRT")
+cat("R² ajustado:", summary(modelo_sqrt)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_sqrt), "\n")
+cat("RMSE:", rmse(modelo_sqrt), "\n\n")
+
+# MODELO CON INTERACCIÓN
+print("MODELO CON INTERACCIÓN")
+cat("R² ajustado:", summary(modelo_interaccion)$adj.r.squared, "\n")
+cat("AIC:", AIC(modelo_interaccion), "\n")
+cat("RMSE:", rmse(modelo_interaccion), "\n\n")
+
+
+```
+
+
+El modelo lineal simple (Total Interactions ~ like + share + comment) es el más eficiente y equilibrado, con excelente capacidad explicativa y bajo error. El modelo stepwise, aunque competitivo, no supera su rendimiento. El spline, logarítmico, y polinómico no son los más adecuados en nuestro contexto.Tras realizar los modelos queda claro que el modelo lineal simple era el mejor ya que lo hemos hecho con la variable like , que forma parrte de la suma de lo que vale Total interactions, que es la suma de like , comment y share . Los demás modelos los hemos hecho con variables diferentes ya que si lo hacemos con esas variables , pues obviamente van a quedar perfectos pero no nos aportarian nada que no sepamos al modelo.
+
+
+
+## Conclusión
+
+Después de haber probado distintos tipos de modelos y transformaciones, llegamos a la conclusión de que el modelo lineal simple, usando las variables like, share y comment, es el que mejor resultado nos da. Tiene un R² ajustado muy alto (casi 0.99) y un error muy bajo, lo que significa que predice muy bien la variable Total Interactions. Esto era esperable, ya que estas tres variables son justamente las que componen la variable objetivo, así que su relación es directa.
+
+Probamos también modelos más complejos como el polinómico y el spline, pero no mejoraron los resultados. De hecho, el modelo spline tuvo errores muy grandes y no fue útil. El modelo polinómico tampoco se ajustó bien, sobre todo en zonas donde había mucha dispersión.
+
+En cuanto a las transformaciones (logarítmica, raíz cuadrada y Box-Cox), vimos que no aportaban ninguna mejora real al modelo. El gráfico de Box-Cox incluso nos indicó que no hacía falta transformar la variable dependiente. Además, los modelos transformados explicaban menos y cometían más errores.
+
+Intentamos crear variables de interacción para ver si podían mejorar el ajuste, pero en nuestro caso no fueron significativas, por lo que tampoco ayudaron. Finalmente, probamos con la selección automática de variables (stepwise), y aunque el modelo resultante fue bastante bueno, no supera al modelo lineal simple en precisión. Es algo que ya nos podiamos percatar ya que al enfrentar las variables con el target se veia una relación lineal bastante clara.
+
+  
+  
+# Modelos de regresión generalizada
+
+# Otros mdelos de regresión
+Los Modelos Aditivos Generalizados (GAMs) permiten capturar relaciones no lineales entre la variable dependiente y las variables independientes. 
+
+Las funciones de suavizado permiten modelar relaciones no lineales de manera flexible y controlada, evitando el sobreajuste. En los GAMs, las funciones de suavizado se implementan comúnmente mediante splines.
+
+Ajuste de un GAM con Splines
+```{r}
+library(mgcv)
+
+ # Sustituimos espacios por puntos en los nombres de las variables
+train_clean2 <- train_clean
+names(train_clean2) <- make.names(names(train_clean2))  
+
+# Ajuste del modelo GAM usando splines cúbicos con la variable 'like'
+modelo_gam <- gam(Total.Interactions ~ s(like), data = train_clean2, method = "REML")
+
+# Resumen del modelo
+summary(modelo_gam)
+```
+Interpretamos los resultados obtenidos con summary. 
+
+En primer lugar, el edf indica el grado de flexibilidad del suavizado. s(like) tiene un edf = 8.459, lo que indica que la relación entre las variables es no lineal (ya que es mayor que 1). 
+
+El p-valor indica  si la función suavizada para este predictor es significativa. Tenemos que el p-valor < 2e-16. Como p-valor < 0.05, podemos rechazar la hipótiesis nula y concluir que la relación entre el predictor (like) y la variable dependiente (Total interactions) es estadísticamente significativa. Esto tiene sentido ya que 'Total Interactions' es la suma de like, share y comment.
+
+```{r}
+# Visualización de la función suavizada
+plot(modelo_gam, main = "Ajuste GAM con Splines Cúbicos", shade = TRUE)
+
+# Personalización avanzada del gráfico
+plot(modelo_gam, 
+     residuals = TRUE,  # Muestra los residuos
+     pch = 19,          # Estilo de los puntos de datos
+     col = "blue",      # Color de la curva suavizada
+     seWithMean = TRUE, # Muestra intervalos de confianza ajustados al promedio
+     rug = TRUE,        # Añade marcas en el eje x para indicar la densidad de los datos
+     main = "Efecto Suavizado de x sobre y")
+```
+Evaluación del ajuste de un GAM
+```{r}
+# Verificar la deviance explicada y el AIC
+cat("Deviance explained:", summary(modelo_gam)$dev.expl, "\n")
+cat("AIC del Modelo:", AIC(modelo_gam), "\n")
+```
+
+El Deviance explained indica el porcentaje de la variabilidad de los datos explicada por el modelo. En este caso es de 0.9952203, lo que sugiere que el modelo captura muy bien la variabilidad de los datos.
+
+Un AIC más bajo sugiere un modelo mejor ajustado. En este modelo el AIC es de 2099.987, no es muy bajo.
+
+
+```{r}
+# Diagnóstico de residuos
+par(mfrow = c(2, 2))
+gam.check(modelo_gam)
+```
+
+El Q-Q Plot (arriba izquierda) compara los residuos del modelo con una distribución normal. La línea roja es lo que se esperaría bajo normalidad y lo negro son los residuos del modelo. Vemos que en los residuos hay una curvatura, lo que indica que nos residuos no son normales.
+
+En el gráfico de resids vs linear pred (arriba derecha), vemos que hay cierta forma de embudo, los residuos son más dispersos a medida que aumenta la predicción. Esto indica posible heterocedasticidad. 
+
+El histograma (abajo izquierda) nos ayuda a ver cómo de distribuyen los residuos. Refuerza lo visto en el Q-Q plot, no hay una normalidad perfecta.
+
+Por último, el gráfico response vs Fitted Values (abajo derecha) muestra si el modelo está capturando la tendencia general de la respuesta. Buscamos una diagonal. Vemos que los puntos se alinean, pero hay mucha dispersión a medida que suben los valores ajustados. Esto implica que el modelo tiene mejor ajuste en el rango bajo de 'Total Interactions', pero le cuesta con los valores altos.
+
+
+```{r}
+library(mgcv)
+library(cvTools)
+
+# Asignar variables con nuevos nombres
+x1 <- train_clean2$like
+y1 <- train_clean2$Total.Interactions
+n1 <- length(y1)
+
+# Configuración de validación cruzada 5-fold
+set.seed(123)
+folds <- cvFolds(n = n1, K = 5)
+
+# Inicializar vector de errores
+errores <- numeric(5)
+
+# Validación cruzada
+for (i in 1:5) {
+  test_idx <- which(folds$which == i)
+  train_idx <- setdiff(1:n1, test_idx)
+  
+  modelo_gam_cv <- gam(y1 ~ s(x1), data = data.frame(x1 = x1[train_idx], y1 = y1[train_idx]), method = "REML")
+  predicciones <- predict(modelo_gam_cv, newdata = data.frame(x1 = x1[test_idx]))
+  
+  errores[i] <- sqrt(mean((y1[test_idx] - predicciones)^2))  # RMSE
+}
+
+# Resultado final
+error_promedio <- mean(errores)
+cat("Error Promedio (RMSE) de la Validación Cruzada:", error_promedio)
+```
+Un RMSE de 24.47838 indica que, en promedio, el modelo se equivoca por alrededor de 24 interacciones cuando predice el número total de interacciones de una publicación. Es un error bastante bajo, lo que sugiere que es un buen modelo.
+
+
+Como 'Total Interactions' es la suma de 'like' 'comment' y 'share', vamos a probar el modelo con otra de las variables, para ver si el modelo sigue siendo bueno.
+```{r}
+# Ajuste del modelo GAM usando splines cúbicos con la variable 'Lifetime Post reach by people who like your Page'
+modelo_gam2 <- gam(Total.Interactions ~ s(Lifetime.Post.reach.by.people.who.like.your.Page), data = train_clean2, method = "REML")
+
+# Resumen del modelo
+summary(modelo_gam2)
+```
+En este caso, el edf es 7.729, lo que indica que de nuevo la relación entre las variables es no lineal (ya que es mayor que 1).
+
+En cuanto al p-valor, tenemos que el p-valor < 2e-16. Como p-valor < 0.05, rechazamos la hipótesis nula y podemos concluir que la relación entre el predictor y la variable dependiente es estadísticamente significativa, en este caso entre 'Total interactions' y 'Lifetime Post reach by people who like your Page'
+
+```{r}
+# Visualización de la función suavizada
+plot(modelo_gam2, main = "Ajuste GAM con Splines Cúbicos", shade = TRUE)
+
+# Personalización avanzada del gráfico
+plot(modelo_gam2, 
+     residuals = TRUE,  # Muestra los residuos
+     pch = 19,          # Estilo de los puntos de datos
+     col = "blue",      # Color de la curva suavizada
+     seWithMean = TRUE, # Muestra intervalos de confianza ajustados al promedio
+     rug = TRUE,        # Añade marcas en el eje x para indicar la densidad de los datos
+     main = "Efecto Suavizado de x sobre y")
+```
+
+Evaluación del ajuste de un GAM
+```{r}
+# Verificar la deviance explicada y el AIC
+cat("Deviance explained:", summary(modelo_gam2)$dev.expl, "\n")
+cat("AIC del Modelo:", AIC(modelo_gam2), "\n")
+```
+El Deviance explained es de 0.6092445, lo que sugiere que el modelo captura la variabilidad de los datos, pero no de una forma tan buena como en el caso anterior.
+
+El AIC de este modelo es de 3186.723, que es bastante alto.
+
+```{r}
+# Diagnóstico de residuos
+par(mfrow = c(2, 2))
+gam.check(modelo_gam2)
+```
+
+En el Q-Q Plot (arriba izquierda) los puntos se desvían de la línea recta (línea roja), especialmente en las colas. Esto indica que los residuos no siguen una distribución normal.
+
+En el gráfico de resids vs linear pred (arriba derecha), al igual que antes vemos que hay cierta forma de embudo, la dispersión de los residuos aumenta con el valor del predictor lineal. Esto indica posible heterocedasticidad. 
+
+El histograma (abajo izquierda) nos ayuda a ver cómo de distribuyen los residuos. Aunque tiene cierta simetría, hay una cola hacia la derecha, lo que refuerza la idea de que la distribución no es normal. Esto coincide con lo observado en el Q-Q plot.
+
+Por último, el gráfico response vs Fitted Values (abajo derecha) muestra si el modelo está capturando la tendencia general de la respuesta. La relación no sigue una línea clara ni una forma sistemática. Hay alta dispersión y evidencia de valores extremos (outliers)
+
+```{r}
+library(mgcv)
+library(cvTools) 
+
+
+# Extraer variables directamente del data frame
+x <- train_clean2$Lifetime.Post.reach.by.people.who.like.your.Page
+y <- train_clean2$Total.Interactions
+n <- length(y)
+
+# Configuración de la validación cruzada 5-fold
+set.seed(123)
+folds <- cvFolds(n = n, K = 5)
+
+# Inicializar vector para errores
+errores <- numeric(5)
+
+# Validación cruzada
+for (i in 1:5) {
+  test_idx <- which(folds$which == i)
+  train_idx <- setdiff(1:n, test_idx)
+  
+  modelo_gam_cv <- gam(y ~ s(x), data = data.frame(x = x[train_idx], y = y[train_idx]), method = "REML")
+  predicciones <- predict(modelo_gam_cv, newdata = data.frame(x = x[test_idx]))
+  
+  errores[i] <- sqrt(mean((y[test_idx] - predicciones)^2))  # RMSE
+}
+
+# Resultado final
+error_promedio <- mean(errores)
+cat("Error Promedio (RMSE) de la Validación Cruzada:", error_promedio)
+```
+
+Un RMSE de 183.3781 indica que, en promedio, este modelo se equivoca por alrededor de 183 interacciones cuando predice el número total de interacciones de una publicación. La mayoría de observaciones tienen entre o y 260 interacciones totales, por lo que un error de 183 es bastante alto, lo que indica que no es un buen modelo.
+
+
+# Comparación y evaluación de modelos
+
