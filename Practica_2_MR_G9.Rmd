@@ -2338,6 +2338,7 @@ cat("Índice de Sobredispersión:", sobredispersión, "\n")
 ```
 
 Interpretación:
+
   + Si el índice de sobredispersión ≈ 1 → no hay problema
 
   + Si > 1.5 o 2 → hay sobredispersión → considerar otro modelo
